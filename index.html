@@ -131,6 +131,10 @@ p.leg{margin:0 0 16px;color:var(--suave)}
 .previa{text-align:center;color:var(--suave);min-height:1.5em;margin:4px 0 10px}
 .acoes2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
 .fechar{display:block;margin:10px auto 0}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:12px 0 0;background:var(--fundo);padding:4px;border-radius:12px}
+.seg button{min-height:44px;border:0;border-radius:9px;background:transparent;color:var(--fenix);font-weight:700}
+.seg button[aria-pressed="true"]{background:var(--fenix);color:#fff}
+.dica{color:var(--suave);font-size:.88rem;margin:2px 0 0}
 .erro-campo{color:var(--erro);font-size:.9rem;text-align:center;min-height:1.3em;margin:0}
 
 /* Histórico */
@@ -637,7 +641,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
  * backup, tela Sobre. Cópia local no localStorage (funciona offline).
  * ========================================================================== */
 const APP = "fenix-cofrinho";
-const VERSAO = "v1.0";
+const VERSAO = "v1.1";
 const INICIO_PROJETO = "04/11/2026";
 const CORE_URL = "https://fenicris-dev.github.io/Fenix-Core/fenix-core.js";
 
@@ -658,19 +662,28 @@ const CELULAS = [
   { c: 2,     nome: "Tartaruga-marinha",  cor: ["#2a7fb8", "#8ccbe9"] }
 ].map(d => ({ ...d, v: d.c * 100, modelo: "celula" }));
 
+const COR_PADRAO = v => v === 100 ? "bimetal" : v === 50 ? "prata" : "bronze";
 const MOEDAS = [
-  { v: 100, nome: "Um real",        tipo: "bimetal" },
-  { v: 50,  nome: "Cinquenta centavos", tipo: "prata" },
-  { v: 25,  nome: "Vinte e cinco centavos", tipo: "bronze" },
-  { v: 10,  nome: "Dez centavos",   tipo: "bronze" },
-  { v: 5,   nome: "Cinco centavos", tipo: "bronze" }
-].map(d => ({ ...d, modelo: "moeda" }));
+  { v: 100, cor: "bimetal", nome: "Um real" },
+  { v: 50,  cor: "prata",   nome: "Cinquenta centavos" },
+  { v: 25,  cor: "bronze",  nome: "Vinte e cinco centavos" },
+  { v: 25,  cor: "prata",   nome: "Vinte e cinco centavos" },
+  { v: 10,  cor: "bronze",  nome: "Dez centavos" },
+  { v: 10,  cor: "prata",   nome: "Dez centavos" },
+  { v: 5,   cor: "bronze",  nome: "Cinco centavos" },
+  { v: 5,   cor: "prata",   nome: "Cinco centavos" }
+].map(d => ({ ...d, tipo: d.cor, modelo: "moeda", id: "m" + d.v + d.cor[0] }));
+CELULAS.forEach(d => { d.id = "c" + d.c; });
 
 const MODELOS = {
   celula: { rotulo: "Células", singular: "célula", itens: CELULAS },
   moeda:  { rotulo: "Moedas",  singular: "moeda",  itens: MOEDAS }
 };
-const achaDen = (modelo, v) => MODELOS[modelo].itens.find(d => d.v === v);
+const DENS = [...CELULAS, ...MOEDAS];
+const denPorId = id => DENS.find(d => d.id === id);
+const CORES = { bronze: "Bronze", prata: "Prateada", bimetal: "Bimetálica" };
+const corDe = m => m.modelo === "moeda" ? (m.cor || COR_PADRAO(m.v)) : "";
+const denDe = m => m.modelo === "celula" ? CELULAS.find(d => d.v === m.v) : MOEDAS.find(d => d.v === m.v && d.cor === corDe(m));
 
 /* ---------- Estado ---------- */
 const S = { core: null, db: null, auth: null, user: null, sync: null, movs: [],
@@ -692,11 +705,18 @@ function lerArr(chave) { try { const a = JSON.parse(localStorage.getItem(chave) 
 function gravarArr(chave, arr) { try { localStorage.setItem(chave, JSON.stringify(arr)); } catch (e) { toast("Não foi possível gravar neste aparelho.", true); } }
 
 /* ---------- Saldos ---------- */
-function saldoDe(modelo, v) { return S.movs.reduce((s, m) => (m.modelo === modelo && m.v === v ? s + m.q : s), 0); }
+function saldoDen(d) { return S.movs.reduce((t, m) => (m.modelo === d.modelo && m.v === d.v && (d.modelo === "celula" || corDe(m) === d.cor) ? t + m.q : t), 0); }
 function totaisModelo(modelo) {
   let valor = 0, pecas = 0;
-  MODELOS[modelo].itens.forEach(d => { const q = saldoDe(modelo, d.v); valor += q * d.v; pecas += q; });
+  MODELOS[modelo].itens.forEach(d => { const q = saldoDen(d); valor += q * d.v; pecas += q; });
   return { valor, pecas };
+}
+/* Quantidade em blocos de 10 + avulsas */
+const plural = (n, um, varios) => n === 1 ? um : varios;
+function fmtQtd(q) {
+  if (q < 10) return inteiro(q) + " un.";
+  const b = Math.floor(q / 10), r = q % 10;
+  return inteiro(b) + " " + plural(b, "bloco", "blocos") + (r ? " + " + r + " un." : "");
 }
 
 /* ---------- Faces (SVG, sem arquivos externos) ---------- */
@@ -737,7 +757,6 @@ function faceMoeda(d, larg) {
   </svg>`;
 }
 const face = (d, larg) => d.modelo === "celula" ? faceCelula(d, larg || 110) : faceMoeda(d, Math.round((larg || 110) * 0.55));
-const faceDe = (m, larg) => { const d = achaDen(m.modelo, m.v); return d ? face(d, larg) : ""; };
 
 /* ---------- Nuvem (Core) ---------- */
 const ESTADOS = { sincronizado: "Sincronizado", sincronizando: "Sincronizando…", offline: "Offline", erro: "Erro de sincronia", local: "Só neste aparelho" };
@@ -770,8 +789,8 @@ async function salvarMov(m) {
   if (S.sync) { await S.sync.salvar(m); return; }
   const chave = chaveLocal(); const arr = lerArr(chave); arr.push(m); gravarArr(chave, arr); S.movs = arr; render();
 }
-function registrar(modelo, v, q, nota, extra) {
-  return salvarMov({ id: novoId(), modelo, v, q, em: Date.now(), nota: nota || "", ...(extra || {}) });
+function registrar(d, q, nota, extra) {
+  return salvarMov({ id: novoId(), modelo: d.modelo, v: d.v, ...(d.modelo === "moeda" ? { cor: d.cor } : {}), q, em: Date.now(), nota: nota || "", ...(extra || {}) });
 }
 
 /* ---------- Navegação e telas ---------- */
@@ -794,7 +813,7 @@ function render() {
 
 function pilha(modelo) {
   const it = MODELOS[modelo].itens;
-  const mostra = modelo === "celula" ? [it[3], it[1], it[0]] : [it[4], it[2], it[0]];
+  const mostra = modelo === "celula" ? [it[3], it[1], it[0]] : [it[2], it[0], it[3]];
   const pos = [{ r: -9, x: -58 }, { r: 0, x: 0 }, { r: 9, x: 58 }];
   return mostra.map((d, i) => `<span style="position:absolute;transform:translateX(${pos[i].x}px) rotate(${pos[i].r}deg);filter:drop-shadow(0 3px 5px rgba(2,7,51,.28))">${face(d, modelo === "celula" ? 96 : 100)}</span>`).join("");
 }
@@ -811,16 +830,16 @@ function htmlInicio() {
 function htmlModelo() {
   const M = MODELOS[S.modelo], tot = totaisModelo(S.modelo);
   const linhas = M.itens.map(d => {
-    const q = saldoDe(d.modelo, d.v);
-    const desc = d.modelo === "celula" ? d.nome : (d.v === 100 ? "Bimetálica" : d.tipo === "prata" ? "Prateada" : "Bronze");
-    return `<button class="linha-den${q === 0 ? " zero" : ""}" data-v="${d.v}" type="button" aria-label="Ajustar ${esc(fmt(d.v))}">
+    const q = saldoDen(d);
+    const desc = d.modelo === "celula" ? d.nome : CORES[d.cor];
+    return `<button class="linha-den${q === 0 ? " zero" : ""}" data-den="${d.id}" type="button" aria-label="Ajustar ${esc(fmt(d.v) + (d.modelo === "moeda" ? " " + CORES[d.cor].toLowerCase() : ""))}">
       <div class="face">${face(d, 108)}</div>
       <div><div class="nome num">${fmt(d.v)}</div><div class="desc">${esc(desc)}</div></div>
-      <div class="dir"><b class="num">${inteiro(q)} un.</b><span class="num">${fmt(q * d.v)}</span></div>
+      <div class="dir"><b class="num">${esc(fmtQtd(q))}</b><span class="num">${fmt(q * d.v)}</span></div>
     </button>`;
   }).join("");
   return `<button class="link voltar" id="btnVoltar" type="button">‹ Início</button>
-    <div class="cab-modelo"><div><h2 class="tit" style="margin:0">${M.rotulo}</h2><p class="leg" style="margin:0">Toque em uma denominação para acrescentar ou retirar.</p></div>
+    <div class="cab-modelo"><div><h2 class="tit" style="margin:0">${M.rotulo}</h2><p class="leg" style="margin:0">Toque em uma denominação para acrescentar ou retirar, em unidades ou em blocos de 10.</p></div>
     <div style="text-align:right"><div class="sub num">${fmt(tot.valor)}</div><div class="leg num" style="margin:0">${inteiro(tot.pecas)} peças</div></div></div>
     <div class="lista">${linhas}</div>`;
 }
@@ -831,13 +850,13 @@ function htmlHistorico() {
   if (S.filtro !== "todos") lista = lista.filter(m => m.modelo === S.filtro);
   const total = lista.length;
   const itens = lista.slice(0, S.limite).map(m => {
-    const d = achaDen(m.modelo, m.v); if (!d) return "";
+    const d = denDe(m); if (!d) return "";
     const ent = m.q > 0, ja = estornados.has(m.id), pode = !m.estorno && !ja;
     const sinal = ent ? "+" : "−";
     return `<div class="mov${ja || m.estorno ? " estornado" : ""}">
       <div class="mini">${face(d, 62)}</div>
-      <div><div class="t num"><span class="${ent ? "ent" : "sai"}">${sinal}${inteiro(Math.abs(m.q))}</span> × ${fmt(m.v)} = ${sinal}${fmt(Math.abs(m.q) * m.v)}</div>
-        <div class="d">${quando(m.em)} · ${MODELOS[m.modelo].singular}${m.nota ? " · " + esc(m.nota) : ""}${ja ? " · estornado" : ""}</div></div>
+      <div><div class="t num">${m.b ? `<span class="${ent ? "ent" : "sai"}">${sinal}${inteiro(m.b)} ${plural(m.b, "bloco", "blocos")}</span> (${inteiro(Math.abs(m.q))} × ${fmt(m.v)})` : `<span class="${ent ? "ent" : "sai"}">${sinal}${inteiro(Math.abs(m.q))}</span> × ${fmt(m.v)}`} = ${sinal}${fmt(Math.abs(m.q) * m.v)}</div>
+        <div class="d">${quando(m.em)} · ${m.modelo === "moeda" ? "moeda " + CORES[corDe(m)].toLowerCase() : "célula"}${m.nota ? " · " + esc(m.nota) : ""}${ja ? " · estornado" : ""}</div></div>
       <div>${pode ? `<button class="btn sec bt" data-estornar="${esc(m.id)}" type="button">Estornar</button>` : ""}</div>
     </div>`;
   }).join("");
@@ -860,7 +879,10 @@ function htmlDados() {
 }
 
 /* ---------- Sobre (Core) ---------- */
-const CHANGELOG = [{ versao: "1.0", criadaEm: "2026-11-04", modificadaEm: "2026-11-04",
+const CHANGELOG = [
+  { versao: "1.1", criadaEm: "2026-11-04", modificadaEm: "2026-11-04",
+    mudancas: ["Contagem em blocos de 10 unidades, pelo valor total do bloco", "Moedas de 5, 10 e 25 centavos separadas por cor (bronze e prateada)", "Saldos exibidos em blocos + avulsas, também no PDF"] },
+  { versao: "1.0", criadaEm: "2026-11-04", modificadaEm: "2026-11-04",
   mudancas: ["Contagem de células (R$ 2 a R$ 200) e moedas (R$ 0,05 a R$ 1,00)", "Faces desenhadas de cada denominação", "Acrescentar, retirar e estornar com histórico", "Login e sincronia entre aparelhos pelo Fênix Core", "Relatório em PDF e backup em JSON"] }];
 function montarSobre() {
   const box = $("#sobreBox");
@@ -879,10 +901,13 @@ function montarSobre() {
 function abrirFolha(html) { const f = $("#folha"); f.innerHTML = html; $("#fundo").hidden = false; return f; }
 function fecharFolha() { $("#fundo").hidden = true; $("#folha").innerHTML = ""; }
 
-function abrirAjuste(modelo, v) {
-  const d = achaDen(modelo, v); const saldo = saldoDe(modelo, v);
-  const f = abrirFolha(`<div class="cab">${face(d, 150)}<h3 class="num">${fmt(v)}</h3><p>Saldo atual: <b class="num">${inteiro(saldo)} un.</b> (${fmt(saldo * v)})</p></div>
-    <label class="campo" for="ajQtd" style="text-align:center">Quantidade</label>
+function abrirAjuste(d) {
+  const v = d.v, saldo = saldoDen(d);
+  let modo = "un";   // "un" = unidades, "bl" = blocos de 10
+  const sub = d.modelo === "moeda" ? " · " + CORES[d.cor].toLowerCase() : "";
+  const f = abrirFolha(`<div class="cab">${face(d, 150)}<h3 class="num">${fmt(v)}${sub}</h3><p>Saldo atual: <b class="num">${esc(fmtQtd(saldo))}</b> (${fmt(saldo * v)})</p><p class="dica num">1 bloco = 10 un. = ${fmt(v * 10)}</p></div>
+    <div class="seg" role="group" aria-label="Contar em"><button type="button" data-modo="un" aria-pressed="true">Unidades</button><button type="button" data-modo="bl" aria-pressed="false">Blocos de 10</button></div>
+    <label class="campo" for="ajQtd" id="ajRot" style="text-align:center">Quantidade de unidades</label>
     <div class="stepper"><button type="button" id="ajMenos" aria-label="Diminuir">−</button><input class="entrada num" id="ajQtd" inputmode="numeric" pattern="[0-9]*" value="1" autocomplete="off"><button type="button" id="ajMais" aria-label="Aumentar">+</button></div>
     <div class="previa num" id="ajPrevia"></div>
     <label class="campo" for="ajNota">Observação (opcional)</label>
@@ -892,19 +917,32 @@ function abrirAjuste(modelo, v) {
     <button class="link fechar" id="ajFechar" type="button">Cancelar</button>`);
   const qtd = f.querySelector("#ajQtd"), erro = f.querySelector("#ajErro"), previa = f.querySelector("#ajPrevia");
   const ler = () => { const n = parseInt(qtd.value.replace(/\D/g, ""), 10); return isFinite(n) ? n : 0; };
-  const atualizar = () => { erro.textContent = ""; const n = ler(); previa.textContent = n > 0 ? `${inteiro(n)} × ${fmt(v)} = ${fmt(n * v)}` : ""; };
+  const unidades = n => n * (modo === "bl" ? 10 : 1);
+  const atualizar = () => {
+    erro.textContent = ""; const n = ler();
+    if (n < 1) { previa.textContent = ""; return; }
+    previa.textContent = modo === "bl"
+      ? `${inteiro(n)} ${plural(n, "bloco", "blocos")} (${inteiro(unidades(n))} × ${fmt(v)}) = ${fmt(unidades(n) * v)}`
+      : `${inteiro(n)} × ${fmt(v)} = ${fmt(n * v)}`;
+  };
+  f.querySelectorAll(".seg button").forEach(bt => bt.onclick = () => {
+    modo = bt.dataset.modo;
+    f.querySelectorAll(".seg button").forEach(x => x.setAttribute("aria-pressed", String(x === bt)));
+    f.querySelector("#ajRot").textContent = modo === "bl" ? "Quantidade de blocos de 10" : "Quantidade de unidades";
+    atualizar();
+  });
   qtd.addEventListener("input", () => { qtd.value = qtd.value.replace(/\D/g, "").slice(0, 6); atualizar(); });
   f.querySelector("#ajMenos").onclick = () => { qtd.value = Math.max(1, ler() - 1); atualizar(); };
-  f.querySelector("#ajMais").onclick = () => { qtd.value = Math.min(999999, ler() + 1); atualizar(); };
+  f.querySelector("#ajMais").onclick = () => { qtd.value = Math.min(99999, ler() + 1); atualizar(); };
   f.querySelector("#ajFechar").onclick = fecharFolha;
   async function aplicar(sinal) {
-    const n = ler();
+    const n = ler(), un = unidades(n), atual = saldoDen(d);
     if (n < 1) { erro.textContent = "Informe uma quantidade maior que zero."; qtd.focus(); return; }
-    if (sinal < 0 && n > saldoDe(modelo, v)) { erro.textContent = `Você só tem ${inteiro(saldoDe(modelo, v))} dessa denominação.`; return; }
+    if (sinal < 0 && un > atual) { erro.textContent = `Você só tem ${fmtQtd(atual)} dessa denominação.`; return; }
     const botoes = f.querySelectorAll(".acoes2 .btn"); botoes.forEach(b => b.disabled = true);
     try {
-      await registrar(modelo, v, sinal * n, f.querySelector("#ajNota").value.trim());
-      toast(`${sinal > 0 ? "Acrescentado" : "Retirado"}: ${inteiro(n)} × ${fmt(v)}`);
+      await registrar(d, sinal * un, f.querySelector("#ajNota").value.trim(), modo === "bl" ? { b: n } : null);
+      toast(`${sinal > 0 ? "Acrescentado" : "Retirado"}: ${modo === "bl" ? `${inteiro(n)} ${plural(n, "bloco", "blocos")} (${inteiro(un)} × ${fmt(v)})` : `${inteiro(n)} × ${fmt(v)}`}`);
       fecharFolha();
     } catch (e) {
       console.error(e); botoes.forEach(b => b.disabled = false);
@@ -919,8 +957,9 @@ function abrirAjuste(modelo, v) {
 /* ---------- Estornar ---------- */
 async function estornar(id) {
   const m = S.movs.find(x => x.id === id); if (!m) return;
-  if (m.q > 0 && saldoDe(m.modelo, m.v) < m.q) { toast("Não dá para estornar: o saldo atual é menor que essa entrada.", true); return; }
-  try { await registrar(m.modelo, m.v, -m.q, "Estorno", { estorno: m.id }); toast("Movimentação estornada."); }
+  const d = denDe(m); if (!d) return;
+  if (m.q > 0 && saldoDen(d) < m.q) { toast("Não dá para estornar: o saldo atual é menor que essa entrada.", true); return; }
+  try { await registrar(d, -m.q, "Estorno", { estorno: m.id, ...(m.b ? { b: m.b } : {}) }); toast("Movimentação estornada."); }
   catch (e) { console.error(e); toast("Não foi possível estornar agora.", true); }
 }
 
@@ -941,9 +980,9 @@ function confirmarDigitando(titulo, texto, palavra, aoConfirmar) {
 async function zerarSaldos() {
   let n = 0;
   try {
-    for (const modelo of Object.keys(MODELOS)) for (const d of MODELOS[modelo].itens) {
-      const q = saldoDe(modelo, d.v);
-      if (q > 0) { await registrar(modelo, d.v, -q, "Zeragem"); n++; }
+    for (const d of DENS) {
+      const q = saldoDen(d);
+      if (q > 0) { await registrar(d, -q, "Zeragem"); n++; }
     }
     toast(n ? "Saldos zerados." : "Não havia saldo para zerar.");
   } catch (e) { console.error(e); toast("Não foi possível zerar agora.", true); }
@@ -961,14 +1000,15 @@ function fazerBackup() {
   toast("Backup baixado.");
 }
 function movValido(m) {
-  return m && typeof m.id === "string" && m.id && MODELOS[m.modelo] && achaDen(m.modelo, m.v)
+  return m && typeof m.id === "string" && m.id && MODELOS[m.modelo] && denDe(m)
     && Number.isInteger(m.q) && m.q !== 0 && Math.abs(m.q) <= 999999 && typeof m.em === "number";
 }
 async function restaurar(arquivo) {
   try {
     const j = JSON.parse(await arquivo.text());
     const lista = (Array.isArray(j) ? j : j.movimentos || []).filter(movValido)
-      .map(m => ({ id: m.id, modelo: m.modelo, v: m.v, q: m.q, em: m.em, nota: String(m.nota || "").slice(0, 60), ...(m.estorno ? { estorno: String(m.estorno) } : {}) }));
+      .map(m => ({ id: m.id, modelo: m.modelo, v: m.v, ...(m.modelo === "moeda" ? { cor: corDe(m) } : {}), q: m.q, em: m.em, nota: String(m.nota || "").slice(0, 60),
+        ...(m.estorno ? { estorno: String(m.estorno) } : {}), ...(Number.isInteger(m.b) && m.b > 0 ? { b: m.b } : {}) }));
     if (!lista.length) { toast("Nenhuma movimentação válida nesse arquivo.", true); return; }
     if (S.sync) await S.sync.importarLista(lista);
     else { const mapa = new Map(S.movs.map(m => [m.id, m])); lista.forEach(m => mapa.set(m.id, m)); S.movs = [...mapa.values()]; gravarArr(chaveLocal(), S.movs); render(); }
@@ -986,12 +1026,15 @@ function gerarPDF() {
   Object.keys(MODELOS).forEach(modelo => {
     const M = MODELOS[modelo]; const tot = totaisModelo(modelo); geral += tot.valor;
     doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.text(M.rotulo, 15, y); y += 6;
-    doc.setFontSize(10); doc.text("Denominação", 15, y); doc.text("Quantidade", 110, y, { align: "right" }); doc.text("Subtotal", 185, y, { align: "right" });
+    doc.setFontSize(10); doc.text("Denominação", 15, y); doc.text("Blocos de 10", 90, y, { align: "right" }); doc.text("Avulsas", 120, y, { align: "right" });
+    doc.text("Total un.", 150, y, { align: "right" }); doc.text("Subtotal", 195, y, { align: "right" });
     doc.setLineWidth(.2); doc.line(15, y + 1.5, 195, y + 1.5); y += 7; doc.setFont("helvetica", "normal");
-    M.itens.forEach(d => { const q = saldoDe(modelo, d.v);
-      doc.text(fmt(d.v), 15, y); doc.text(inteiro(q), 110, y, { align: "right" }); doc.text(fmt(q * d.v), 185, y, { align: "right" }); y += 6; });
+    M.itens.forEach(d => { const q = saldoDen(d);
+      doc.text(fmt(d.v) + (d.modelo === "moeda" ? " (" + CORES[d.cor].toLowerCase() + ")" : ""), 15, y);
+      doc.text(inteiro(Math.floor(q / 10)), 90, y, { align: "right" }); doc.text(inteiro(q % 10), 120, y, { align: "right" });
+      doc.text(inteiro(q), 150, y, { align: "right" }); doc.text(fmt(q * d.v), 195, y, { align: "right" }); y += 6; });
     doc.setFont("helvetica", "bold"); doc.line(15, y - 3.5, 195, y - 3.5);
-    doc.text("Total de " + M.rotulo.toLowerCase(), 15, y); doc.text(inteiro(tot.pecas), 110, y, { align: "right" }); doc.text(fmt(tot.valor), 185, y, { align: "right" }); y += 12;
+    doc.text("Total de " + M.rotulo.toLowerCase(), 15, y); doc.text(inteiro(tot.pecas), 150, y, { align: "right" }); doc.text(fmt(tot.valor), 195, y, { align: "right" }); y += 12;
   });
   doc.setFontSize(14); doc.text("Total geral: " + fmt(geral), 15, y);
   doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.text("Fênix Soluções Tecnológicas", 15, 288);
@@ -1033,7 +1076,7 @@ document.addEventListener("click", ev => {
   if (alvo.matches("#menu button")) return ir(alvo.dataset.tela);
   if (alvo.dataset.modelo) return ir("modelo", alvo.dataset.modelo);
   if (alvo.id === "btnVoltar") return ir("inicio");
-  if (alvo.dataset.v && S.tela === "modelo") return abrirAjuste(S.modelo, Number(alvo.dataset.v));
+  if (alvo.dataset.den && S.tela === "modelo") return abrirAjuste(denPorId(alvo.dataset.den));
   if (alvo.dataset.filtro) { S.filtro = alvo.dataset.filtro; S.limite = 60; return render(); }
   if (alvo.id === "btnMais") { S.limite += 60; return render(); }
   if (alvo.dataset.estornar) return estornar(alvo.dataset.estornar);
