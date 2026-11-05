@@ -7,6 +7,10 @@
 <meta name="theme-color" content="#041273">
 <meta name="description" content="Fênix Cofrinho — contabilize suas moedas e células.">
 <link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cofrinho">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23041273'/%3E%3Ccircle cx='32' cy='32' r='22' fill='%23ffcb00'/%3E%3Ccircle cx='32' cy='32' r='16' fill='none' stroke='%23041273' stroke-width='3'/%3E%3Ctext x='32' y='40' font-family='Arial' font-weight='700' font-size='24' text-anchor='middle' fill='%23041273'%3E$%3C/text%3E%3C/svg%3E">
 <style>
 :root{
@@ -641,7 +645,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
  * backup, tela Sobre. Cópia local no localStorage (funciona offline).
  * ========================================================================== */
 const APP = "fenix-cofrinho";
-const VERSAO = "v1.1";
+const VERSAO = "v1.2";
 const INICIO_PROJETO = "04/11/2026";
 const CORE_URL = "https://fenicris-dev.github.io/Fenix-Core/fenix-core.js";
 
@@ -880,6 +884,8 @@ function htmlDados() {
 
 /* ---------- Sobre (Core) ---------- */
 const CHANGELOG = [
+  { versao: "1.2", criadaEm: "2026-11-04", modificadaEm: "2026-11-04",
+    mudancas: ["App instalável (PWA): manifest, ícones e service worker", "Abre sem internet depois do primeiro acesso, inclusive o Fênix Core"] },
   { versao: "1.1", criadaEm: "2026-11-04", modificadaEm: "2026-11-04",
     mudancas: ["Contagem em blocos de 10 unidades, pelo valor total do bloco", "Moedas de 5, 10 e 25 centavos separadas por cor (bronze e prateada)", "Saldos exibidos em blocos + avulsas, também no PDF"] },
   { versao: "1.0", criadaEm: "2026-11-04", modificadaEm: "2026-11-04",
@@ -1096,6 +1102,11 @@ $("#btnCriar").addEventListener("click", () => S.auth && acaoAuth((e, s) => S.au
 $("#btnReset").addEventListener("click", () => S.auth && acaoAuth(e => S.auth.redefinirSenha(e), "Enviamos o link de redefinição para o seu e-mail."));
 $("#btnLocal").addEventListener("click", () => { S.local = true; S.user = null; S.movs = lerArr(chaveLocal()); chip("local"); mostrarApp(); });
 $("#ano").textContent = new Date().getFullYear();
+
+/* ---------- PWA ---------- */
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js").catch(e => console.warn("Service worker:", e)));
+}
 
 /* ---------- Boot ---------- */
 (async function boot() {
