@@ -240,6 +240,30 @@ p.leg{margin:0 0 16px;color:var(--suave)}
 .menu-av button:hover{background:var(--amarelo)}
 .aviso-lic{max-width:880px;margin:0 auto;padding:10px 14px 0}
 body.somente-leitura [data-grava]{opacity:.4;pointer-events:none}
+.cx-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px}
+.cx-pill,.chip-cat{min-height:40px;padding:6px 14px;border-radius:999px;border:1.5px solid var(--linha);background:#fff;color:var(--fenix);font-weight:700}
+.cx-pill[aria-pressed="true"],.chip-cat[aria-pressed="true"]{background:var(--fenix);color:#fff;border-color:var(--fenix)}
+.cx-pill.novo,.chip-cat.novo{border-style:dashed;color:var(--dell)}
+.cx-pill:hover,.chip-cat:hover{border-color:var(--dell)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 6px}
+.chips .entrada{max-width:220px}
+.per-custom{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:0 0 12px}
+.per-custom .entrada{max-width:150px}
+.resumo{margin-bottom:14px}
+.res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.res-grid small{display:block;color:var(--suave);font-size:.8rem}
+.res-grid b{font-size:1.05rem}
+.res-grid .ent{color:var(--ok)}.res-grid .sai{color:var(--texto)}
+.resumo h4{margin:14px 0 6px;color:var(--fenix);font-size:.95rem}
+.barra-cat{display:grid;grid-template-columns:minmax(70px,1fr) 2fr auto;gap:8px;align-items:center;margin:4px 0;font-size:.9rem}
+.bc-t{display:block;height:10px;background:var(--linha);border-radius:999px;overflow:hidden}
+.bc-t i{display:block;height:100%;border-radius:999px;background:var(--dell)}
+.bc-t i.e{background:var(--ok)}
+.plano{display:flex;flex-direction:column;gap:8px;margin:10px 0}
+.plano-l{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:#fff;border:1px solid var(--linha);border-radius:12px;padding:8px 12px}
+.plano-l .mini{width:64px;display:flex;justify-content:center}
+.plano-l .d{color:var(--suave);font-size:.82rem}
+.mov .acs{display:flex;flex-direction:column;align-items:flex-end}
 .erro-campo{color:var(--erro);font-size:.9rem;text-align:center;min-height:1.3em;margin:0}
 
 /* Histórico */
@@ -797,7 +821,7 @@ setTimeout(fenixSplashFechar, 1200);
   <a href="https://wa.me/5579999680880" target="_blank" rel="noopener">&lt;Cristiano Fênix/&gt;</a>
   |
   <a href="https://www.instagram.com/fenixsolucoestecnologicas/" target="_blank" rel="noopener">© Fênix Soluções Tecnológicas</a>
-  · v1.8
+  · v1.9
 </footer>
 
 <script>
@@ -1184,7 +1208,7 @@ function socialLogin(provider) {
   <a href="https://wa.me/5579999680880" target="_blank" rel="noopener">&lt;Cristiano Fênix/&gt;</a>
   |
   <a href="https://www.instagram.com/fenixsolucoestecnologicas/" target="_blank" rel="noopener">© Fênix Soluções Tecnológicas</a>
-  · v1.8
+  · v1.9
 </footer>
 
 <script>
@@ -1800,7 +1824,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
  * backup, tela Sobre. Cópia local no localStorage (funciona offline).
  * ========================================================================== */
 const APP = "fenix-cofrinho";
-const VERSAO = "v1.8";
+const VERSAO = "v1.9";
 const INICIO_PROJETO = "04/11/2026";
 const LIVRO = "5.8";          // versão do Livro das Regras aplicada (selo da regra 53)
 const CORE_MINIMO = "4.4";    // core mais antigo que o app aceita (criarSincronia com importarLista)
@@ -1846,7 +1870,7 @@ const corDe = m => m.modelo === "moeda" ? (m.cor || COR_PADRAO(m.v)) : "";
 const denDe = m => m.modelo === "celula" ? CELULAS.find(d => d.v === m.v) : MOEDAS.find(d => d.v === m.v && d.cor === corDe(m));
 
 /* ---------- Estado ---------- */
-const S = { core: null, db: null, auth: null, user: null, sync: null, syncCfg: null, perfil: null, movs: [], meta: 0, rapido: false, pend: {},
+const S = { core: null, db: null, auth: null, user: null, sync: null, syncCfg: null, perfil: null, movs: [], cfg: [], cx: "principal", periodo: "tudo", de: "", ate: "", todosCx: false, rapido: false, pend: {},
             local: false, tela: "inicio", modelo: null, filtro: "todos", limite: 60, sinc: "sincronizado" };
 const $ = s => document.querySelector(s);
 
@@ -1867,10 +1891,11 @@ function lerArr(chave) { try { const a = JSON.parse(localStorage.getItem(chave) 
 function gravarArr(chave, arr) { try { localStorage.setItem(chave, JSON.stringify(arr)); } catch (e) { toast("Não foi possível gravar neste aparelho.", true); } }
 
 /* ---------- Saldos ---------- */
-function saldoDen(d) { return S.movs.reduce((t, m) => (m.modelo === d.modelo && m.v === d.v && (d.modelo === "celula" || corDe(m) === d.cor) ? t + m.q : t), 0); }
-function totaisModelo(modelo) {
+function saldoDen(d, cx) { const c = cx || S.cx; return S.movs.reduce((t, m) => (cxDe(m) === c && m.modelo === d.modelo && m.v === d.v && (d.modelo === "celula" || corDe(m) === d.cor) ? t + m.q : t), 0); }
+function totalTodos() { return S.movs.reduce((t, m) => t + m.q * m.v, 0); }
+function totaisModelo(modelo, cx) {
   let valor = 0, pecas = 0;
-  MODELOS[modelo].itens.forEach(d => { const q = saldoDen(d); valor += q * d.v; pecas += q; });
+  MODELOS[modelo].itens.forEach(d => { const q = saldoDen(d, cx); valor += q * d.v; pecas += q; });
   return { valor, pecas };
 }
 /* Quantidade em blocos de 10 + avulsas */
@@ -1935,11 +1960,31 @@ async function carregarCore() {
 }
 const CHAVE_LOCAL = "fenix-cofrinho:movs:local";
 const CHAVE_CFG_LOCAL = "fenix-cofrinho:cfg:local";
-const metaDe = arr => { const m = (arr || []).find(x => x && x.id === "meta"); return m && Number.isInteger(m.valor) && m.valor > 0 ? m.valor : 0; };
+/* Configurações sincronizadas (tabela config): cofrinhos, categorias e metas */
+const CAT_PADRAO = { saida: ["Mercado", "Combustível", "Contas", "Troco", "Banco", "Outros"], entrada: ["Salário", "Vendas", "Troco Recebido", "Banco", "Outros"] };
+const cfgReg = id => (S.cfg || []).find(x => x && x.id === id);
+const cxDe = m => m.cx || "principal";
+function listaCofrinhos() {
+  const r = cfgReg("cofrinhos"), base = r && Array.isArray(r.lista) ? r.lista.filter(c => c && c.id && c.nome) : [];
+  const l = base.length ? base.slice() : [{ id: "principal", nome: "Principal" }];
+  S.movs.forEach(m => { const id = cxDe(m); if (!l.some(c => c.id === id)) l.push({ id, nome: tituloCore(id.replace(/-[a-z0-9]{4}$/, "").replace(/-/g, " ")) }); });
+  return l;
+}
+const nomeCx = id => { const c = listaCofrinhos().find(x => x.id === id); return c ? c.nome : "Principal"; };
+function metaCx(cx) { const r = cfgReg("meta:" + cx) || (cx === "principal" ? cfgReg("meta") : null); return r && Number.isInteger(r.valor) && r.valor > 0 ? r.valor : 0; }
+const metaAtual = () => metaCx(S.cx);
+function listaCategorias(tipo) { const r = cfgReg("categorias"), l = r && Array.isArray(r[tipo]) ? r[tipo].filter(x => typeof x === "string" && x.trim()) : []; return l.length ? l : CAT_PADRAO[tipo]; }
+const chaveCx = () => "fenix-cofrinho:cx:" + (S.user ? S.user.uid : "local");
+function garantirCx() {
+  const l = listaCofrinhos();
+  if (!l.some(c => c.id === S.cx)) { const salvo = lerObj(chaveCx()); S.cx = (salvo && l.some(c => c.id === salvo)) ? salvo : l[0].id; }
+}
+function escolherCx(id) { S.cx = id; gravarObj(chaveCx(), id); render(); }
 function chaveLocal() { return "fenix-cofrinho:movs:" + (S.user ? S.user.uid : "local"); }
 
-const ESQUEMA = 2;   // regra 65. v1: moedas sem a cor; v2: cor gravada em cada movimentação de moeda
-const migracaoMovs = { 2: arr => Array.isArray(arr) ? arr.map(m => (m && m.modelo === "moeda" && !m.cor) ? { ...m, cor: COR_PADRAO(m.v) } : m) : arr };
+const ESQUEMA = 3;   // regra 65. v1: moedas sem a cor; v2: cor gravada nas moedas; v3: cofrinho (cx) e categoria (cat) nas movimentações
+const migracaoMovs = { 2: arr => Array.isArray(arr) ? arr.map(m => (m && m.modelo === "moeda" && !m.cor) ? { ...m, cor: COR_PADRAO(m.v) } : m) : arr,
+  3: arr => Array.isArray(arr) ? arr.map(m => (m && !m.cx) ? { ...m, cx: "principal" } : m) : arr };
 function migrarEsquema(uid) {
   if (!S.core || !S.core.esquema) return;
   [["fenix-cofrinho:movs:" + uid, migracaoMovs], ["fenix-cofrinho:cfg:" + uid, {}], [chavePerfil(uid), {}]].forEach(([chave, mig]) => {
@@ -1951,7 +1996,7 @@ function iniciarNuvem() {
   const uid = S.user.uid, chave = chaveLocal(), chaveC = "fenix-cofrinho:cfg:" + uid;
   migrarEsquema(uid);
   S.movs = lerArr(chave);
-  S.meta = metaDe(lerArr(chaveC));
+  S.cfg = lerArr(chaveC); garantirCx();
   S.sync = S.core.criarSincronia(S.db, {
     nomeApp: APP, tabela: "movimentos", uid,
     lerLocal: () => lerArr(chave),
@@ -1963,7 +2008,7 @@ function iniciarNuvem() {
     nomeApp: APP, tabela: "config", uid,
     lerLocal: () => lerArr(chaveC),
     gravarLocal: arr => gravarArr(chaveC, arr),
-    aoMudar: arr => { S.meta = metaDe(arr); render(); }
+    aoMudar: arr => { S.cfg = arr; garantirCx(); render(); }
   });
   S.sync.iniciar(); S.syncCfg.iniciar();
   chip(navigator.onLine === false ? "offline" : "sincronizando");
@@ -1975,13 +2020,24 @@ async function salvarMov(m) {
   const chave = chaveLocal(); const arr = lerArr(chave); arr.push(m); gravarArr(chave, arr); S.movs = arr; render();
 }
 async function registrar(d, q, nota, extra) {
-  const mov = { id: novoId(), modelo: d.modelo, v: d.v, ...(d.modelo === "moeda" ? { cor: d.cor } : {}), q, em: Date.now(), nota: nota || "", ...(extra || {}) };
+  const mov = { id: novoId(), modelo: d.modelo, v: d.v, ...(d.modelo === "moeda" ? { cor: d.cor } : {}), cx: S.cx, q, em: Date.now(), nota: nota || "", ...(extra || {}) };
   await salvarMov(mov); return mov;
 }
-async function salvarMeta(valor) {
-  const reg = { id: "meta", valor, em: Date.now() };
+async function salvarCfg(reg) {
+  reg = { ...reg, em: Date.now() };
   if (S.syncCfg) { await S.syncCfg.salvar(reg); return; }
-  const arr = lerArr(CHAVE_CFG_LOCAL).filter(x => x.id !== "meta"); arr.push(reg); gravarArr(CHAVE_CFG_LOCAL, arr); S.meta = valor; render();
+  const arr = lerArr(CHAVE_CFG_LOCAL).filter(x => x.id !== reg.id); arr.push(reg); gravarArr(CHAVE_CFG_LOCAL, arr); S.cfg = arr; garantirCx(); render();
+}
+const salvarMeta = valor => salvarCfg({ id: "meta:" + S.cx, valor });
+async function atualizarMov(m) {
+  if (S.sync) { await S.sync.salvar(m); return; }
+  const chave = chaveLocal(), arr = lerArr(chave).map(x => x.id === m.id ? m : x); gravarArr(chave, arr); S.movs = arr; render();
+}
+async function adicionarCategoria(tipo, nome) {
+  const atual = listaCategorias(tipo);
+  if (atual.some(c => c.toLowerCase() === nome.toLowerCase())) return nome;
+  await salvarCfg({ id: "categorias", saida: tipo === "saida" ? [...atual, nome] : listaCategorias("saida"), entrada: tipo === "entrada" ? [...atual, nome] : listaCategorias("entrada") });
+  return nome;
 }
 
 /* ---------- Navegação e telas ---------- */
@@ -2006,10 +2062,10 @@ function mudarPend(id, delta) {
   if (p === 0) delete S.pend[id]; else S.pend[id] = p;
   const y = window.scrollY; render(); window.scrollTo(0, y);
 }
-async function aplicarPend() {
+async function aplicarPend(catS, catE) {
   const itens = Object.entries(S.pend).filter(([, v]) => v);
   try {
-    for (const [id, delta] of itens) { await registrar(denPorId(id), delta, "Contagem rápida"); delete S.pend[id]; }
+    for (const [id, delta] of itens) { const cat = delta < 0 ? catS : catE; await registrar(denPorId(id), delta, "Contagem rápida", cat ? { cat } : null); delete S.pend[id]; }
     S.rapido = false; S.pend = {};
     toast(`${itens.length} ${plural(itens.length, "alteração aplicada", "alterações aplicadas")}.`); render();
   } catch (e) { console.error(e); toast(msgGravar(e, "Não foi possível aplicar tudo agora. Confira o histórico."), true); render(); }
@@ -2035,24 +2091,28 @@ function pilha(modelo) {
   return mostra.map((d, i) => `<span style="position:absolute;transform:translateX(${pos[i].x}px) rotate(${pos[i].r}deg);filter:drop-shadow(0 3px 5px rgba(2,7,51,.28))">${face(d, modelo === "celula" ? 96 : 100)}</span>`).join("");
 }
 function htmlInicio() {
-  const c = totaisModelo("celula"), m = totaisModelo("moeda"), total = c.valor + m.valor;
+  const c = totaisModelo("celula"), m = totaisModelo("moeda"), total = c.valor + m.valor, cofs = listaCofrinhos(), meta = metaAtual();
   const card = (modelo, tot) => `<button class="cx-modelo" data-modelo="${modelo}" type="button">
       <div class="pilha">${pilha(modelo)}</div>
       <div><h3>${MODELOS[modelo].rotulo}</h3><div class="vl num">${fmt(tot.valor)}</div><div class="qt num">${inteiro(tot.pecas)} ${tot.pecas === 1 ? "peça" : "peças"}</div></div>
     </button>`;
   const neg = DENS.filter(d => saldoDen(d) < 0).length;
   const aviso = neg ? `<div class="aviso" role="alert">${neg === 1 ? "Uma denominação está com saldo negativo." : neg + " denominações estão com saldo negativo."} Abra e use “Definir saldo” para acertar pela contagem.</div>` : "";
-  let meta = '<div style="margin:-6px 0 14px"><button class="link" id="btnMeta" type="button">+ Definir meta</button></div>';
-  if (S.meta) {
-    const pct = total > 0 ? Math.floor(total / S.meta * 100) : 0;
-    meta = `<div class="meta cartao"><div class="meta-l"><b class="num">Meta: ${fmt(S.meta)}</b><b class="num">${pct}%</b></div>
+  let blocoMeta = '<div style="margin:-6px 0 14px"><button class="link" id="btnMeta" type="button">+ Definir meta</button></div>';
+  if (meta) {
+    const pct = total > 0 ? Math.floor(total / meta * 100) : 0;
+    blocoMeta = `<div class="meta cartao"><div class="meta-l"><b class="num">Meta: ${fmt(meta)}</b><b class="num">${pct}%</b></div>
       <div class="trilho" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.min(100, pct)}"><i style="width:${Math.min(100, pct)}%"></i></div>
-      <div class="meta-r num"><span>${total >= S.meta ? "Meta alcançada!" : "Faltam " + fmt(S.meta - total)}</span><button class="link" id="btnMeta" type="button">Alterar meta</button></div></div>`;
+      <div class="meta-r num"><span>${total >= meta ? "Meta alcançada!" : "Faltam " + fmt(meta - total)}</span><button class="link" id="btnMeta" type="button">Alterar meta</button></div></div>`;
   }
+  const barraCx = `<div class="cx-bar" role="group" aria-label="Cofrinhos">${cofs.map(x => `<button type="button" class="cx-pill" data-cx="${esc(x.id)}" aria-pressed="${x.id === S.cx}">${esc(x.nome)}</button>`).join("")}<button type="button" class="cx-pill novo" id="btnNovoCx">+ Novo</button><button type="button" class="link" id="btnRenCx">Renomear</button></div>`;
   return `<h2 class="tit">O que vamos contabilizar?</h2><p class="leg">Escolha moedas ou células para ver as denominações e ajustar as quantidades.</p>
+    ${barraCx}
     ${aviso}
-    <div class="total-geral"><div><small>Total geral</small><strong class="num">${fmt(total)}</strong></div><div class="un num">${inteiro(c.pecas)} células<br>${inteiro(m.pecas)} moedas</div></div>
-    ${meta}
+    <div class="total-geral"><div><small>${cofs.length > 1 ? "Total do cofrinho " + esc(nomeCx(S.cx)) : "Total geral"}</small><strong class="num">${fmt(total)}</strong></div><div class="un num">${inteiro(c.pecas)} células<br>${inteiro(m.pecas)} moedas</div></div>
+    ${cofs.length > 1 ? `<p class="dica num" style="margin:-6px 0 12px">Todos os cofrinhos: <b>${fmt(totalTodos())}</b></p>` : ""}
+    ${blocoMeta}
+    <div class="barra-ferr"><button class="btn sec" id="btnSeparar" type="button">Separar valor</button><button class="btn sec" id="btnTrocar" type="button">Trocar peças</button></div>
     <div class="escolha">${card("celula", c)}${card("moeda", m)}</div>`;
 }
 function htmlModelo() {
@@ -2081,21 +2141,21 @@ function htmlModelo() {
   const barra = S.rapido && pend.length ? `<div class="barra-aplicar"><div><b>${pend.length} ${plural(pend.length, "alteração", "alterações")}</b><span class="num"> · ${vp >= 0 ? "+" : "−"}${fmt(Math.abs(vp))}</span></div>
       <div class="btns2"><button class="btn sec" id="btnDescartar" type="button">Descartar</button><button class="btn" id="btnAplicar" data-grava type="button">Aplicar</button></div></div>` : "";
   return `<button class="link voltar" id="btnVoltar" type="button">‹ Início</button>
-    <div class="cab-modelo"><div><h2 class="tit" style="margin:0">${M.rotulo}</h2><p class="leg" style="margin:0">${S.rapido ? "Toque em −/+ para montar a contagem e aplique tudo de uma vez." : "Toque em uma denominação para acrescentar, retirar ou definir o saldo."}</p></div>
+    <div class="cab-modelo"><div><h2 class="tit" style="margin:0">${M.rotulo}${listaCofrinhos().length > 1 ? " · " + esc(nomeCx(S.cx)) : ""}</h2><p class="leg" style="margin:0">${S.rapido ? "Toque em −/+ para montar a contagem e aplique tudo de uma vez." : "Toque em uma denominação para acrescentar, retirar ou definir o saldo."}</p></div>
     <div style="text-align:right"><div class="sub num">${fmt(tot.valor)}</div><div class="leg num" style="margin:0">${inteiro(tot.pecas)} peças</div></div></div>
-    <div class="barra-ferr"><button class="btn sec" id="btnRapido" type="button" aria-pressed="${S.rapido}">${S.rapido ? "Sair da contagem rápida" : "Contagem rápida"}</button><button class="btn sec" id="btnTrocar" type="button">Trocar peças</button></div>
+    <div class="barra-ferr"><button class="btn sec" id="btnRapido" type="button" aria-pressed="${S.rapido}">${S.rapido ? "Sair da contagem rápida" : "Contagem rápida"}</button><button class="btn sec" id="btnTrocar" type="button">Trocar peças</button><button class="btn sec" id="btnSeparar" type="button">Separar valor</button></div>
     <div class="lista">${linhas}</div>${barra}`;
 }
 
 /* Gráfico da evolução do total (SVG, sem bibliotecas) */
 const fmtCurto = c => (c / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).replace(/\u00a0/g, " ");
-function htmlGrafico(movs) {
+function htmlGrafico(movs, titulo, comMeta) {
   const ord = movs.slice().sort((a, b) => a.em - b.em);
-  if (ord.length < 2) return '<div class="cartao grafico"><b style="color:var(--fenix)">Evolução do total</b><p class="dica">O gráfico aparece a partir da segunda movimentação.</p></div>';
+  if (ord.length < 2) return '<div class="cartao grafico"><b style="color:var(--fenix)">' + esc(titulo) + '</b><p class="dica">O gráfico aparece a partir da segunda movimentação.</p></div>';
   let acc = 0, pts = ord.map(m => { acc += m.q * m.v; return { t: m.em, y: acc }; });
   if (pts.length > 300) { const k = Math.ceil(pts.length / 300); pts = pts.filter((_, i) => i % k === 0 || i === pts.length - 1); }
   const W = 600, H = 220, L = 74, R = 16, T = 14, B = 30, t0 = pts[0].t, t1 = pts[pts.length - 1].t, n = pts.length;
-  const meta = S.filtro === "todos" ? S.meta : 0;
+  const meta = comMeta ? metaAtual() : 0;
   let min = Math.min(0, ...pts.map(p => p.y)), max = Math.max(...pts.map(p => p.y), meta || 0);
   if (max === min) max = min + 100;
   const folga = (max - min) * 0.06; max += folga; if (min < 0) min -= folga;
@@ -2107,8 +2167,8 @@ function htmlGrafico(movs) {
   const grade = [min, (min + max) / 2, max].map(v => `<line x1="${L}" x2="${W - R}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}" stroke="var(--linha)"/><text x="${L - 6}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end" font-size="11" style="fill:var(--suave)">${esc(fmtCurto(v))}</text>`).join("");
   const dia = t => new Date(t).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
   const lm = meta ? `<line x1="${L}" x2="${W - R}" y1="${Y(meta).toFixed(1)}" y2="${Y(meta).toFixed(1)}" stroke="#b8860b" stroke-width="1.5" stroke-dasharray="6 4"/><text x="${W - R}" y="${(Y(meta) - 5).toFixed(1)}" text-anchor="end" font-size="11" font-weight="700" style="fill:#8a6508">meta</text>` : "";
-  return `<div class="cartao grafico"><div class="cab-g"><b>Evolução do total</b><b class="num">${fmt(acc)}</b></div>
-    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Evolução do total, de ${esc(fmt(pts[0].y))} em ${dia(t0)} para ${esc(fmt(acc))} em ${dia(t1)}">
+  return `<div class="cartao grafico"><div class="cab-g"><b>${esc(titulo)}</b><b class="num">${fmt(acc)}</b></div>
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(titulo)}, de ${esc(fmt(pts[0].y))} em ${dia(t0)} para ${esc(fmt(acc))} em ${dia(t1)}">
       ${grade}${lm}
       <path d="${area}" fill="rgba(0,118,206,.14)"/>
       <path d="${linha}" fill="none" stroke="#0076CE" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
@@ -2118,28 +2178,76 @@ function htmlGrafico(movs) {
     </svg></div>`;
 }
 
-function htmlHistorico() {
+const PERIODOS = [["tudo", "Tudo"], ["hoje", "Hoje"], ["7d", "7 dias"], ["30d", "30 dias"], ["mes", "Este mês"], ["custom", "Escolher datas"]];
+function dataBR(t) {   // dd/mm/aaaa → início do dia em ms, ou null se não for uma data válida (regra 40)
+  const iso = S.core && S.core.mascaras && S.core.mascaras.dataParaISO ? S.core.mascaras.dataParaISO(t) : null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || "")) || (() => { const b = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(t || "").trim()); return b ? [0, b[3], b[2], b[1]] : null; })();
+  if (!m) return null;
+  const d = new Date(+m[1], +m[2] - 1, +m[3]);
+  return (d.getMonth() === +m[2] - 1 && d.getDate() === +m[3]) ? d.getTime() : null;
+}
+function faixaPeriodo() {
+  const ag = new Date(), ini0 = new Date(ag.getFullYear(), ag.getMonth(), ag.getDate()).getTime();
+  if (S.periodo === "hoje") return [ini0, Infinity];
+  if (S.periodo === "7d") return [ini0 - 6 * 864e5, Infinity];
+  if (S.periodo === "30d") return [ini0 - 29 * 864e5, Infinity];
+  if (S.periodo === "mes") return [new Date(ag.getFullYear(), ag.getMonth(), 1).getTime(), Infinity];
+  if (S.periodo === "custom") { const a = dataBR(S.de), b = dataBR(S.ate); return [a === null ? -Infinity : a, b === null ? Infinity : b + 864e5 - 1]; }
+  return [-Infinity, Infinity];
+}
+/* Resumo: troca e estorno não entram (o valor só mudou de forma ou foi desfeito) */
+function resumoPeriodo(movs) {
   const estornados = new Set(S.movs.filter(m => m.estorno).map(m => m.estorno));
-  let lista = S.movs.slice().sort((a, b) => b.em - a.em);
+  let ent = 0, sai = 0; const porSaida = {}, porEntrada = {};
+  movs.forEach(m => {
+    if (m.tr || m.estorno || estornados.has(m.id)) return;
+    const val = m.q * m.v, cat = m.cat || (m.ct ? "Ajuste de contagem" : m.nota === "Zeragem" ? "Zeragem" : "Sem categoria");
+    if (val > 0) { ent += val; porEntrada[cat] = (porEntrada[cat] || 0) + val; } else { sai -= val; porSaida[cat] = (porSaida[cat] || 0) - val; }
+  });
+  return { ent, sai, var: ent - sai, porSaida, porEntrada };
+}
+function htmlBarras(obj, cls) {
+  const e = Object.entries(obj).sort((a, b) => b[1] - a[1]);
+  if (!e.length) return '<p class="dica">Nada neste período.</p>';
+  const max = e[0][1];
+  return e.map(([k, v]) => `<div class="barra-cat"><span>${esc(k)}</span><span class="bc-t"><i class="${cls}" style="width:${Math.max(4, Math.round(v / max * 100))}%"></i></span><b class="num">${fmt(v)}</b></div>`).join("");
+}
+function htmlResumo(lista) {
+  const r = resumoPeriodo(lista);
+  return `<div class="cartao resumo"><div class="res-grid"><div><small>Entrou</small><b class="num ent">+${fmt(r.ent)}</b></div><div><small>Saiu</small><b class="num sai">−${fmt(r.sai)}</b></div><div><small>Variação</small><b class="num">${r.var < 0 ? "−" : ""}${fmt(Math.abs(r.var))}</b></div></div>
+    <h4>Para onde foi</h4>${htmlBarras(r.porSaida, "")}
+    <h4>De onde veio</h4>${htmlBarras(r.porEntrada, "e")}</div>`;
+}
+function htmlHistorico() {
+  const estornados = new Set(S.movs.filter(m => m.estorno).map(m => m.estorno)), cofs = listaCofrinhos();
+  const nomes = Object.fromEntries(cofs.map(c => [c.id, c.nome]));
+  let lista = S.movs.filter(m => S.todosCx || cxDe(m) === S.cx).sort((a, b) => b.em - a.em);
   if (S.filtro !== "todos") lista = lista.filter(m => m.modelo === S.filtro);
+  const [t0, t1] = faixaPeriodo(); lista = lista.filter(m => m.em >= t0 && m.em <= t1);
   const total = lista.length;
   const itens = lista.slice(0, S.limite).map(m => {
     const d = denDe(m); if (!d) return "";
-    const ent = m.q > 0, ja = estornados.has(m.id), pode = !m.estorno && !ja && (!m.tr || m.q < 0);
-    const sinal = ent ? "+" : "−";
+    const ent = m.q > 0, ja = estornados.has(m.id), pode = !m.estorno && !ja && (!m.tr || m.q < 0), podeCat = !m.tr && !m.estorno && !m.ct && !ja;
+    const sinal = ent ? "+" : "−", lado = ent ? "origem" : "destino";
     return `<div class="mov${ja || m.estorno ? " estornado" : ""}">
       <div class="mini">${face(d, 62)}</div>
       <div><div class="t num">${m.b ? `<span class="${ent ? "ent" : "sai"}">${sinal}${inteiro(m.b)} ${plural(m.b, "bloco", "blocos")}</span> (${inteiro(Math.abs(m.q))} × ${fmt(m.v)})` : `<span class="${ent ? "ent" : "sai"}">${sinal}${inteiro(Math.abs(m.q))}</span> × ${fmt(m.v)}`} = ${sinal}${fmt(Math.abs(m.q) * m.v)}</div>
-        <div class="d">${quando(m.em)} · ${m.modelo === "moeda" ? "moeda " + CORES[corDe(m)].toLowerCase() : "célula"}${m.nota ? " · " + esc(m.nota) : ""}${ja ? " · estornado" : ""}</div></div>
-      <div>${pode ? `<button class="link bt" data-grava data-estornar="${esc(m.id)}" type="button">${m.tr ? "Estornar troca" : "Estornar"}</button>` : ""}</div>
+        <div class="d">${quando(m.em)} · ${m.modelo === "moeda" ? "moeda " + CORES[corDe(m)].toLowerCase() : "célula"}${S.todosCx ? " · " + esc(nomes[cxDe(m)] || "Principal") : ""}${m.cat ? " · " + esc(m.cat) : ""}${m.nota ? " · " + esc(m.nota) : ""}${ja ? " · estornado" : ""}</div></div>
+      <div class="acs">${podeCat ? `<button class="link bt" data-grava data-editcat="${esc(m.id)}" type="button">${m.cat ? "Mudar" : "Definir"} ${lado}</button>` : ""}${pode ? `<button class="link bt" data-grava data-estornar="${esc(m.id)}" type="button">${m.tr ? "Estornar troca" : "Estornar"}</button>` : ""}</div>
     </div>`;
   }).join("");
   const filtro = (id, rot) => `<button type="button" data-filtro="${id}" aria-pressed="${S.filtro === id}">${rot}</button>`;
-  return `<h2 class="tit">Histórico</h2><p class="leg">Toda entrada e saída fica registrada. Para corrigir um erro, use Estornar.</p>
+  const custom = S.periodo === "custom" ? `<div class="per-custom"><div><label class="campo" for="pdDe">De</label><input class="entrada" id="pdDe" data-mask="data" placeholder="dd/mm/aaaa" autocomplete="off" value="${esc(S.de)}"></div><div><label class="campo" for="pdAte">Até</label><input class="entrada" id="pdAte" data-mask="data" placeholder="dd/mm/aaaa" autocomplete="off" value="${esc(S.ate)}"></div><button class="btn" id="btnPdOk" type="button">Aplicar</button></div>` : "";
+  const grafTitulo = S.periodo === "tudo" ? "Evolução do total" : "Variação no período";
+  return `<h2 class="tit">Histórico${cofs.length > 1 && !S.todosCx ? " · " + esc(nomes[S.cx] || "") : ""}</h2><p class="leg">Toda entrada e saída fica registrada. Para corrigir um erro, use Estornar; para dizer de onde veio ou para onde foi, use Definir.</p>
     <div class="filtros">${filtro("todos", "Todos")}${filtro("celula", "Células")}${filtro("moeda", "Moedas")}</div>
-    ${htmlGrafico(lista)}
+    <div class="filtros" role="group" aria-label="Período">${PERIODOS.map(([id, r]) => `<button type="button" data-periodo="${id}" aria-pressed="${S.periodo === id}">${r}</button>`).join("")}</div>
+    ${custom}
+    ${cofs.length > 1 ? `<div class="filtros"><button type="button" id="btnTodosCx" aria-pressed="${S.todosCx}">Somar todos os cofrinhos</button></div>` : ""}
+    ${htmlResumo(lista)}
+    ${htmlGrafico(lista, grafTitulo, S.periodo === "tudo" && !S.todosCx && S.filtro === "todos")}
     ${total ? `<div class="lista">${itens}</div>${total > S.limite ? '<div style="text-align:center;margin-top:12px"><button class="btn sec" id="btnMais" type="button">Mostrar mais</button></div>' : ""}`
-            : '<div class="vazio">Nenhuma movimentação ainda. Escolha moedas ou células no Início para começar.</div>'}`;
+            : '<div class="vazio">Nenhuma movimentação neste filtro. Escolha moedas ou células no Início para começar.</div>'}`;
 }
 
 function htmlDados() {
@@ -2152,12 +2260,14 @@ function htmlDados() {
       <div class="btns"><button class="btn" id="btnBackup" type="button">Fazer backup</button><button class="btn sec" id="btnRestaurar" data-grava type="button">Importar backup</button></div>
       <input type="file" id="arqRestaurar" accept="application/json,.json" hidden></div>
     ${gLocal}
-    <div class="grupo cartao"><h3>Zerar saldos</h3><p>Leva todas as denominações a zero de uma vez. O histórico é mantido e você ainda poderá estornar.</p><div class="btns"><button class="btn perigo" id="btnZerar" data-grava type="button">Zerar saldos</button></div></div>
+    <div class="grupo cartao"><h3>Zerar saldos deste cofrinho</h3><p>Leva todas as denominações do cofrinho que está aberto a zero de uma vez. O histórico é mantido e você ainda poderá estornar.</p><div class="btns"><button class="btn perigo" id="btnZerar" data-grava type="button">Zerar saldos</button></div></div>
     ${sai}`;
 }
 
 /* ---------- Sobre (Core) ---------- */
 const CHANGELOG = [
+  { versao: "1.9", criadaEm: "2026-11-15", modificadaEm: "2026-11-15",
+    mudancas: ["Vários cofrinhos (Casa, Carteira, Caixa…), cada um com seus saldos, meta e histórico, e o total de todos", "Para onde foi o dinheiro (e de onde veio): categorias na retirada e no acréscimo, editáveis depois no Histórico", "Resumo por período no Histórico: entrou, saiu, variação e a divisão por categoria", "Separar valor: o app escolhe, do saldo, as peças certas para formar um valor, com o menor número de peças", "Esquema dos dados v3: cofrinho (cx) e categoria (cat) nas movimentações, com migração e cópia de segurança"] },
   { versao: "1.8", criadaEm: "2026-11-15", modificadaEm: "2026-11-15",
     mudancas: ["Etapa 4 do Livro das Regras v5.8 (dados e segurança)", "Saída protegida: nenhuma janela com edição em andamento fecha sem perguntar; Voltar do celular, recarregar e fechar a aba também (regra 71)", "Importar backup substitui os dados atuais, com confirmação digitando APAGAR (regras 44 e 47)", "Versão do esquema dos dados (v2: cor gravada nas moedas), com cópia de segurança antes de migrar (regra 65)", "Texto do usuário tratado como texto, pelo FenixCore.seguranca (regra 64)", "Observações com a primeira letra de cada palavra em maiúscula (regra 42)"] },
   { versao: "1.7", criadaEm: "2026-11-15", modificadaEm: "2026-11-15",
@@ -2240,6 +2350,7 @@ function abrirAjuste(d) {
     <label class="campo" for="ajQtd" id="ajRot" style="text-align:center">Quantidade de unidades</label>
     <div class="stepper"><button type="button" id="ajMenos" aria-label="Diminuir">−</button><input class="entrada num" id="ajQtd" data-mask="numero" value="1" autocomplete="off"><button type="button" id="ajMais" aria-label="Aumentar">+</button></div>
     <div class="previa num" id="ajPrevia"></div>
+    <div id="ajCatBox" hidden><p class="campo" id="ajCatRot" style="text-align:center;margin:8px 0 4px"></p><div class="chips" id="ajChips" style="justify-content:center"></div></div>
     <div style="text-align:center"><button class="link" id="ajObsBt" type="button">+ observação</button></div>
     <div id="ajObsBox" hidden><input class="entrada" id="ajNota" maxlength="60" autocomplete="off" aria-label="Observação"></div>
     <p class="erro-campo" id="ajErro" role="alert"></p>
@@ -2271,14 +2382,24 @@ function abrirAjuste(d) {
   const travar = fim => f.querySelectorAll(".acoes2 .btn, #ajDefinir").forEach(b => b.disabled = fim);
   const nota = () => tituloCore(f.querySelector("#ajNota").value.trim());
   const falha = e => { console.error(e); travar(false); erro.textContent = msgGravar(e); };
+  let etapa = 0, cat = null;
+  function ligarEtapa(sinal) {
+    etapa = sinal; cat = null;
+    f.querySelector("#ajCatRot").textContent = sinal < 0 ? "Para onde foi? (opcional)" : "De onde veio? (opcional)";
+    f.querySelector("#ajCatBox").hidden = false;
+    ligarChips(f.querySelector("#ajChips"), sinal < 0 ? "saida" : "entrada", v => cat = v, null);
+    f.querySelector("#ajAdd").textContent = sinal > 0 ? "Confirmar acréscimo" : "Acrescentar";
+    f.querySelector("#ajSub").textContent = sinal < 0 ? "Confirmar retirada" : "Retirar";
+  }
   async function aplicar(sinal) {
     const n = ler(), un = unidades(n), atual = saldoDen(d);
     if (n < 1) { erro.textContent = "Informe uma quantidade maior que zero."; qtd.focus(); return; }
     if (un > 999999) { erro.textContent = "Quantidade grande demais."; return; }
     if (sinal < 0 && un > atual) { erro.textContent = `Você só tem ${fmtQtdTotal(atual, d.modelo)} dessa denominação.`; return; }
+    if (etapa !== sinal) { ligarEtapa(sinal); return; }   // 1º toque: pergunta de onde veio / para onde foi; 2º toque: confirma
     travar(true);
     try {
-      await registrar(d, sinal * un, nota(), modo === "bl" ? { b: n } : null);
+      await registrar(d, sinal * un, nota(), { ...(modo === "bl" ? { b: n } : {}), ...(cat ? { cat } : {}) });
       toast(`${sinal > 0 ? "Acrescentado" : "Retirado"}: ${modo === "bl" ? `${inteiro(n)} ${plural(n, "bloco", "blocos")} (${inteiro(un)} × ${fmt(v)})` : `${inteiro(n)} × ${fmt(v)}`}`);
       fecharFolha();
     } catch (e) { falha(e); }
@@ -2303,11 +2424,155 @@ function abrirNovaContagem() {
     <div class="acoes2" style="grid-template-columns:1fr">
       <button class="btn" data-ir="celula" type="button">Contar células</button>
       <button class="btn" data-ir="moeda" type="button">Contar moedas</button>
+      <button class="btn sec" id="ncSeparar" type="button">Separar valor</button>
       <button class="btn sec" id="ncTrocar" type="button">Trocar peças</button>
     </div><button class="link fechar" id="ncFechar" type="button">Cancelar</button>`);
   f.querySelectorAll("[data-ir]").forEach(b => b.onclick = () => { fecharFolha(); ir("modelo", b.dataset.ir); });
   f.querySelector("#ncTrocar").onclick = () => { fecharFolha(); abrirTroca(); };
+  f.querySelector("#ncSeparar").onclick = () => { fecharFolha(); abrirSeparar(); };
   f.querySelector("#ncFechar").onclick = fecharFolha;
+}
+
+/* ---------- Categorias: de onde veio e para onde foi ---------- */
+function htmlChips(tipo, sel) {
+  return listaCategorias(tipo).map(c => `<button type="button" class="chip-cat" data-catv="${esc(c)}" aria-pressed="${c === sel}">${esc(c)}</button>`).join("") + `<button type="button" class="chip-cat novo" data-catnovo="1">+ Nova</button>`;
+}
+function ligarChips(caixa, tipo, aoEscolher, inicial) {
+  let sel = inicial || null;
+  const desenhar = () => { caixa.innerHTML = htmlChips(tipo, sel); };
+  caixa.addEventListener("click", async ev => {
+    const b = ev.target.closest("button"); if (!b) return;
+    if (b.dataset.catv !== undefined) { sel = sel === b.dataset.catv ? null : b.dataset.catv; aoEscolher(sel); desenhar(); }
+    else if (b.dataset.catnovo) {
+      caixa.innerHTML = `<input class="entrada" id="catNome" maxlength="24" placeholder="Nome da categoria" aria-label="Nome da nova categoria" autocomplete="off"><button type="button" class="chip-cat" data-catadd="1">Adicionar</button>`;
+      caixa.querySelector("#catNome").focus();
+    } else if (b.dataset.catadd) {
+      const nome = tituloCore(caixa.querySelector("#catNome").value.trim());
+      if (nome) { try { sel = await adicionarCategoria(tipo, nome); aoEscolher(sel); } catch (e) { console.error(e); toast(msgGravar(e), true); } }
+      desenhar();
+    }
+  });
+  desenhar();
+}
+function abrirCategoriaMov(id) {
+  const m = S.movs.find(x => x.id === id); if (!m) return;
+  const tipo = m.q > 0 ? "entrada" : "saida"; let sel = m.cat || null;
+  const f = abrirFolha(`<div class="cab"><h3>${tipo === "saida" ? "Para onde foi?" : "De onde veio?"}</h3><p class="num">${esc(fmtQtd(Math.abs(m.q)))} de ${fmt(m.v)} = ${fmt(Math.abs(m.q) * m.v)}</p></div>
+    <div class="chips" id="cmChips"></div><p class="erro-campo" id="cmErro" role="alert"></p>
+    <div class="acoes2"><button class="btn" id="cmOk" data-grava type="button">Salvar</button><button class="btn sec" id="cmNao" type="button">Cancelar</button></div>`);
+  ligarChips(f.querySelector("#cmChips"), tipo, v => sel = v, sel);
+  f.querySelector("#cmNao").onclick = fecharFolha;
+  f.querySelector("#cmOk").onclick = async () => {
+    try { await atualizarMov({ ...m, cat: sel || "" }); toast(sel ? "Categoria salva." : "Categoria removida."); fecharFolha(); }
+    catch (e) { console.error(e); f.querySelector("#cmErro").textContent = msgGravar(e); }
+  };
+}
+function abrirAplicarRapida() {
+  const itens = Object.entries(S.pend).filter(([, v]) => v); if (!itens.length) return;
+  const temEnt = itens.some(([, v]) => v > 0), temSai = itens.some(([, v]) => v < 0);
+  const vp = itens.reduce((t, [id, v]) => t + v * denPorId(id).v, 0); let catE = null, catS = null;
+  const f = abrirFolha(`<div class="cab"><h3>Aplicar contagem rápida</h3><p class="num">${itens.length} ${plural(itens.length, "alteração", "alterações")} · ${vp >= 0 ? "+" : "−"}${fmt(Math.abs(vp))}</p></div>
+    ${temSai ? '<p class="campo" style="margin:8px 0 4px">Para onde foi o que saiu? (opcional)</p><div class="chips" id="rpChipsS"></div>' : ""}
+    ${temEnt ? '<p class="campo" style="margin:8px 0 4px">De onde veio o que entrou? (opcional)</p><div class="chips" id="rpChipsE"></div>' : ""}
+    <div class="acoes2"><button class="btn" id="rpOk" data-grava type="button">Aplicar</button><button class="btn sec" id="rpNao" type="button">Voltar</button></div>`);
+  if (temSai) ligarChips(f.querySelector("#rpChipsS"), "saida", v => catS = v, null);
+  if (temEnt) ligarChips(f.querySelector("#rpChipsE"), "entrada", v => catE = v, null);
+  f.querySelector("#rpNao").onclick = fecharFolha;
+  f.querySelector("#rpOk").onclick = async () => { fecharFolha(); await aplicarPend(catS, catE); };
+}
+/* ---------- Cofrinhos ---------- */
+function slugCx(nome) { return (nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "cx") + "-" + novoId().replace(/[^a-z0-9]/gi, "").slice(0, 4).toLowerCase(); }
+function abrirNomeCx(novo) {
+  const atual = listaCofrinhos().find(c => c.id === S.cx);
+  const f = abrirFolha(`<div class="cab"><h3>${novo ? "Novo cofrinho" : "Renomear cofrinho"}</h3><p>${novo ? "Ex.: Casa, Carteira, Caixa da loja." : "Os saldos e o histórico continuam os mesmos."}</p></div>
+    <label class="campo" for="cxNome">Nome</label><input class="entrada" id="cxNome" maxlength="24" autocomplete="off" value="${novo ? "" : esc(atual ? atual.nome : "")}">
+    <p class="erro-campo" id="cxErro" role="alert"></p>
+    <div class="acoes2"><button class="btn" id="cxOk" data-grava type="button">${novo ? "Criar" : "Salvar"}</button><button class="btn sec" id="cxNao" type="button">Cancelar</button></div>`, true);
+  const erro = f.querySelector("#cxErro");
+  f.querySelector("#cxNao").onclick = pedirFecharFolha;
+  f.querySelector("#cxOk").onclick = async () => {
+    const nome = tituloCore(f.querySelector("#cxNome").value.trim());
+    if (!nome) { erro.textContent = "Informe o nome."; return; }
+    if (listaCofrinhos().some(c => c.nome.toLowerCase() === nome.toLowerCase() && (novo || c.id !== S.cx))) { erro.textContent = "Já existe um cofrinho com esse nome."; return; }
+    try {
+      const lista = listaCofrinhos();
+      if (novo) { const id = slugCx(nome); await salvarCfg({ id: "cofrinhos", lista: [...lista, { id, nome }] }); escolherCx(id); }
+      else await salvarCfg({ id: "cofrinhos", lista: lista.map(c => c.id === S.cx ? { ...c, nome } : c) });
+      toast(novo ? "Cofrinho criado." : "Cofrinho renomeado."); fecharFolha();
+    } catch (e) { console.error(e); erro.textContent = msgGravar(e); }
+  };
+  f.querySelector("#cxNome").focus();
+}
+/* ---------- Separar valor: o menor número de peças do saldo que forma o valor ---------- */
+function centavosDe(txt) {
+  const reais = S.core && S.core.mascaras ? S.core.mascaras.moedaParaNumero(txt) : parseReais(txt) / 100;
+  return reais == null ? NaN : Math.round(reais * 100);
+}
+function planejarSeparacao(valor, cx) {
+  const dens = DENS.map(d => ({ d, q: saldoDen(d, cx) })).filter(x => x.q > 0), total = dens.reduce((t, x) => t + x.q * x.d.v, 0);
+  if (!Number.isInteger(valor) || valor < 5) return { erro: "Informe um valor a partir de R$ 0,05." };
+  if (valor % 5 !== 0) return { erro: "A menor peça é de R$ 0,05. Use um valor em múltiplos de R$ 0,05." };
+  if (valor > total) return { erro: `O saldo deste cofrinho (${fmt(total)}) não cobre ${fmt(valor)}. Faltam ${fmt(valor - total)}.` };
+  const A = valor / 5; if (A > 200000) return { erro: "Para valores acima de R$ 10.000,00, separe por partes." };
+  const INF = 1e9, dp = [new Int32Array(A + 1).fill(INF)]; dp[0][0] = 0;
+  dens.forEach(({ d, q }) => {   // mochila limitada com mínimo de peças, em O(A) por denominação (janela deslizante)
+    const v = d.v / 5, c = Math.min(q, Math.floor(A / v)), prev = dp[dp.length - 1], cur = new Int32Array(A + 1).fill(INF);
+    for (let r = 0; r < v && r <= A; r++) {
+      const n = Math.floor((A - r) / v) + 1, f = t => { const x = prev[r + t * v]; return x >= INF ? INF : x - t; }, fila = []; let ini = 0;
+      for (let j = 0; j < n; j++) {
+        const fj = f(j);
+        while (fila.length > ini && f(fila[fila.length - 1]) >= fj) fila.pop();
+        fila.push(j);
+        while (fila[ini] < j - c) ini++;
+        const melhor = f(fila[ini]); cur[r + j * v] = melhor >= INF ? INF : melhor + j;
+      }
+    }
+    dp.push(cur);
+  });
+  const ult = dp[dp.length - 1];
+  if (ult[A] >= INF) {
+    let a = A; while (a > 0 && ult[a] >= INF) a--;
+    return { erro: `Com as peças que você tem não dá para formar exatamente ${fmt(valor)}.` + (a > 0 ? ` O valor mais perto, sem passar, é ${fmt(a * 5)}.` : "") };
+  }
+  const itens = []; let a = A;
+  for (let i = dens.length - 1; i >= 0; i--) {
+    const v = dens[i].d.v / 5, c = Math.min(dens[i].q, Math.floor(A / v));
+    for (let k = 0; k <= c && k * v <= a; k++) {
+      const x = dp[i][a - k * v]; if (x < INF && x + k === dp[i + 1][a]) { if (k) itens.push({ d: dens[i].d, k }); a -= k * v; break; }
+    }
+  }
+  itens.sort((x, y) => y.d.v - x.d.v);
+  return { itens, pecas: itens.reduce((t, x) => t + x.k, 0), total: valor };
+}
+function abrirSeparar() {
+  const cx = S.cx; let plano = null, etapa = false, cat = null;
+  const f = abrirFolha(`<div class="cab"><h3>Separar valor</h3><p>Informe quanto você precisa. O app escolhe, do saldo do cofrinho <b>${esc(nomeCx(cx))}</b>, as peças certas, usando o menor número de peças.</p></div>
+    <label class="campo" for="spVal">Valor (R$)</label>
+    <input class="entrada num" id="spVal" data-mask="moeda" placeholder="R$ 0,00" autocomplete="off">
+    <p class="erro-campo" id="spErro" role="alert"></p>
+    <div class="acoes2"><button class="btn" id="spCalc" type="button">Calcular</button><button class="btn sec" id="spNao" type="button">Fechar</button></div>
+    <div id="spRes" hidden></div>`, true);
+  const erro = f.querySelector("#spErro"), res = f.querySelector("#spRes");
+  f.querySelector("#spNao").onclick = pedirFecharFolha;
+  const calcular = () => {
+    erro.textContent = ""; res.hidden = true; etapa = false; cat = null;
+    plano = planejarSeparacao(centavosDe(f.querySelector("#spVal").value), cx);
+    if (plano.erro) { erro.textContent = plano.erro; return; }
+    res.innerHTML = `<div class="plano">${plano.itens.map(it => `<div class="plano-l"><div class="mini">${face(it.d, 62)}</div><div><b class="num">${inteiro(it.k)} × ${fmt(it.d.v)}</b><div class="d">${it.d.modelo === "moeda" ? "moeda " + CORES[it.d.cor].toLowerCase() : "célula"} · ${esc(fmtQtd(it.k))}</div></div><b class="num">${fmt(it.k * it.d.v)}</b></div>`).join("")}</div>
+      <p class="num" style="text-align:center"><b>${inteiro(plano.pecas)}</b> ${plural(plano.pecas, "peça", "peças")} = <b>${fmt(plano.total)}</b></p>
+      <div id="spCatBox" hidden><p class="campo" style="margin:8px 0 4px;text-align:center">Para onde foi? (opcional)</p><div class="chips" id="spChips" style="justify-content:center"></div></div>
+      <button class="btn cheio" id="spTirar" data-grava type="button">Retirar essas peças do saldo</button>
+      <p class="dica" style="text-align:center;margin-top:6px">Se só quer ver quais peças separar, feche esta janela: nada é retirado.</p>`;
+    res.hidden = false;
+    f.querySelector("#spTirar").onclick = async ev => {
+      if (!etapa) { etapa = true; f.querySelector("#spCatBox").hidden = false; ligarChips(f.querySelector("#spChips"), "saida", v => cat = v, null); ev.target.textContent = "Confirmar retirada"; return; }
+      ev.target.disabled = true;
+      try { for (const it of plano.itens) await registrar(it.d, -it.k, "Valor Separado", cat ? { cat } : null); toast(`Separado: ${fmt(plano.total)} em ${inteiro(plano.pecas)} ${plural(plano.pecas, "peça", "peças")}.`); fecharFolha(); }
+      catch (e) { console.error(e); ev.target.disabled = false; erro.textContent = msgGravar(e); }
+    };
+  };
+  f.querySelector("#spCalc").onclick = calcular;
+  f.querySelector("#spVal").focus();
 }
 
 /* ---------- Troca de peças ---------- */
@@ -2383,10 +2648,10 @@ function parseReais(t) {
 function abrirMeta() {
   const f = abrirFolha(`<div class="cab"><h3>Meta do cofrinho</h3><p>Quanto você quer juntar? A barra mostra o progresso do total geral.</p></div>
     <label class="campo" for="mtVal">Valor da meta (R$)</label>
-    <input class="entrada num" id="mtVal" data-mask="moeda" placeholder="R$ 0,00" autocomplete="off" value="${S.meta ? esc((S.meta / 100).toFixed(2).replace(".", ",")) : ""}">
+    <input class="entrada num" id="mtVal" data-mask="moeda" placeholder="R$ 0,00" autocomplete="off" value="${metaAtual() ? esc((metaAtual() / 100).toFixed(2).replace(".", ",")) : ""}">
     <p class="erro-campo" id="mtErro" role="alert"></p>
     <div class="acoes2"><button class="btn" id="mtOk" data-grava type="button">Salvar</button><button class="btn sec" id="mtNao" type="button">Cancelar</button></div>
-    ${S.meta ? '<button class="link fechar" id="mtRem" data-grava type="button">Remover meta</button>' : ""}`, true);
+    ${metaAtual() ? '<button class="link fechar" id="mtRem" data-grava type="button">Remover meta</button>' : ""}`, true);
   const erro = f.querySelector("#mtErro");
   async function gravar(valor, msg) {
     try { await salvarMeta(valor); toast(msg); fecharFolha(); }
@@ -2395,8 +2660,7 @@ function abrirMeta() {
   f.querySelector("#mtNao").onclick = pedirFecharFolha;
   f.querySelector("#mtOk").onclick = () => {
     const txt = f.querySelector("#mtVal").value;
-    const reais = S.core && S.core.mascaras ? S.core.mascaras.moedaParaNumero(txt) : parseReais(txt) / 100;   // sem o core, usa a leitura de reserva
-    const c = reais == null ? NaN : Math.round(reais * 100);
+    const c = centavosDe(txt);   // máscara de moeda do Core; sem o Core, leitura de reserva
     if (!Number.isInteger(c) || c < 1 || c > 100000000000) { erro.textContent = "Informe um valor válido, como 1.500,00."; return; }
     gravar(c, "Meta salva.");
   };
@@ -2409,8 +2673,8 @@ async function estornar(id) {
   const m = S.movs.find(x => x.id === id); if (!m) return;
   if (m.tr) return estornarTroca(m.tr);
   const d = denDe(m); if (!d) return;
-  if (m.q > 0 && saldoDen(d) < m.q) { toast("Não dá para estornar: o saldo atual é menor que essa entrada.", true); return; }
-  try { await registrar(d, -m.q, "Estorno", { estorno: m.id, ...(m.b ? { b: m.b } : {}) }); toast("Movimentação estornada."); }
+  if (m.q > 0 && saldoDen(d, cxDe(m)) < m.q) { toast("Não dá para estornar: o saldo atual é menor que essa entrada.", true); return; }
+  try { await registrar(d, -m.q, "Estorno", { estorno: m.id, cx: cxDe(m), ...(m.b ? { b: m.b } : {}) }); toast("Movimentação estornada."); }
   catch (e) { console.error(e); toast(msgGravar(e, "Não foi possível estornar agora."), true); }
 }
 async function estornarTroca(trId) {
@@ -2419,9 +2683,9 @@ async function estornarTroca(trId) {
   if (!pernas.length || pernas.some(p => feitos.has(p.id))) { toast("Essa troca já foi estornada.", true); return; }
   for (const p of pernas) {
     const d = denDe(p); if (!d) return;
-    if (p.q > 0 && saldoDen(d) < p.q) { toast("Não dá para estornar: o saldo atual é menor que o recebido na troca.", true); return; }
+    if (p.q > 0 && saldoDen(d, cxDe(p)) < p.q) { toast("Não dá para estornar: o saldo atual é menor que o recebido na troca.", true); return; }
   }
-  try { for (const p of pernas) await registrar(denDe(p), -p.q, "Estorno", { estorno: p.id, tr: trId, ...(p.b ? { b: p.b } : {}) }); toast("Troca estornada."); }
+  try { for (const p of pernas) await registrar(denDe(p), -p.q, "Estorno", { estorno: p.id, tr: trId, cx: cxDe(p), ...(p.b ? { b: p.b } : {}) }); toast("Troca estornada."); }
   catch (e) { console.error(e); toast(msgGravar(e, "Não foi possível estornar a troca agora. Confira o histórico."), true); }
 }
 
@@ -2451,7 +2715,7 @@ async function zerarSaldos() {
 }
 
 /* ---------- Backup e restauração ---------- */
-function dadosBackup() { return { app: APP, versao: VERSAO, esquema: ESQUEMA, geradoEm: new Date().toISOString(), meta: S.meta || 0, movimentos: S.movs }; }
+function dadosBackup() { return { app: APP, versao: VERSAO, esquema: ESQUEMA, geradoEm: new Date().toISOString(), config: S.cfg, movimentos: S.movs }; }
 function fazerBackup() {
   if (S.core && S.core.backup && S.core.backup.baixarJSON) { S.core.backup.baixarJSON(APP, dadosBackup()); }
   else {
@@ -2463,12 +2727,14 @@ function fazerBackup() {
 }
 function movValido(m) {
   return m && typeof m.id === "string" && m.id && MODELOS[m.modelo] && denDe(m)
-    && Number.isInteger(m.q) && m.q !== 0 && Math.abs(m.q) <= 999999 && typeof m.em === "number";
+    && Number.isInteger(m.q) && m.q !== 0 && Math.abs(m.q) <= 999999 && typeof m.em === "number"
+    && (m.cx === undefined || (typeof m.cx === "string" && m.cx.length <= 40)) && (m.cat === undefined || typeof m.cat === "string");
 }
 function normalizarMov(m) {
   return { id: m.id, modelo: m.modelo, v: m.v, ...(m.modelo === "moeda" ? { cor: corDe(m) } : {}), q: m.q, em: m.em, nota: String(m.nota || "").slice(0, 60),
     ...(m.estorno ? { estorno: String(m.estorno) } : {}), ...(Number.isInteger(m.b) && m.b > 0 ? { b: m.b } : {}),
-    ...(m.tr ? { tr: String(m.tr) } : {}), ...(m.ct ? { ct: 1 } : {}) };
+    ...(m.tr ? { tr: String(m.tr) } : {}), ...(m.ct ? { ct: 1 } : {}),
+    ...(m.cx ? { cx: String(m.cx).slice(0, 40) } : {}), ...(m.cat ? { cat: String(m.cat).slice(0, 40) } : {}) };
 }
 async function trazerLocal() {
   const lista = lerArr(CHAVE_LOCAL).filter(movValido).map(normalizarMov);
@@ -2502,10 +2768,17 @@ async function restaurar(arquivo) {
   try { j = JSON.parse(await arquivo.text()); } catch (e) { toast("Arquivo de backup inválido.", true); return; }
   const lista = (Array.isArray(j) ? j : j.movimentos || []).filter(movValido).map(normalizarMov);
   if (!lista.length) { toast("Nenhuma movimentação válida nesse arquivo.", true); return; }
-  const meta = !Array.isArray(j) && Number.isInteger(j.meta) && j.meta >= 0 ? j.meta : null;
+  const cfgNovo = (!Array.isArray(j) && Array.isArray(j.config) ? j.config : []).filter(r => r && typeof r.id === "string" && (r.id.startsWith("meta") || r.id === "cofrinhos" || r.id === "categorias"))
+    .map(r => r.id === "meta" ? { ...r, id: "meta:principal" } : r);
+  if (!Array.isArray(j) && Number.isInteger(j.meta) && j.meta > 0 && !cfgNovo.some(r => r.id === "meta:principal")) cfgNovo.push({ id: "meta:principal", valor: j.meta });   // backups antigos (v1.8 e anteriores)
   confirmarDigitando("Importar e substituir os dados?",
     `O backup tem ${inteiro(lista.length)} movimentações e vai SUBSTITUIR as ${inteiro(S.movs.length)} que estão no app agora. Se precisar, faça um backup antes.`, "APAGAR", async () => {
-      try { await substituirPor(lista); if (meta !== null) await salvarMeta(meta); toast(`Backup importado: ${inteiro(lista.length)} movimentações.`); }
+      try {
+        await substituirPor(lista);
+        const novos = new Set(cfgNovo.map(r => r.id));
+        for (const r of S.cfg.slice()) if (r.id.startsWith("meta") && !novos.has(r.id) && r.valor) await salvarCfg({ id: r.id, valor: 0 });   // a importação substitui também as metas
+        for (const r of cfgNovo) await salvarCfg(r);
+        toast(`Backup importado: ${inteiro(lista.length)} movimentações.`); }
       catch (e) { console.error(e); toast(msgGravar(e, "Não foi possível importar agora."), true); }
     });
 }
@@ -2516,7 +2789,7 @@ function gerarPDF() {
   const doc = new J({ unit: "mm", format: "a4" }); let y = 40;
   try { doc.addImage(LOGO_AZUL, "PNG", 15, 12, 42, 14.8); } catch (e) { console.warn(e); }
   doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.text("Fênix Cofrinho", 62, 18);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text("Relatório de saldos — " + quando(Date.now()), 62, 24);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.text("Relatório de saldos — Cofrinho " + nomeCx(S.cx) + " — " + quando(Date.now()), 62, 24);
   const titular = S.user ? (S.user.displayName || S.user.email || "") : "";   // dados do perfil entram com o onboarding (etapa 3)
   if (titular) doc.text(titular, 195, 18, { align: "right" });
   doc.setDrawColor(4, 18, 115); doc.setLineWidth(.6); doc.line(15, 30, 195, 30); doc.setLineWidth(.2); doc.setDrawColor(0, 0, 0);
@@ -2534,7 +2807,8 @@ function gerarPDF() {
     doc.setFont("helvetica", "bold"); doc.line(15, y - 3.5, 195, y - 3.5);
     doc.text("Total de " + M.rotulo.toLowerCase(), 15, y); doc.text(inteiro(tot.pecas), 150, y, { align: "right" }); doc.text(fmt(tot.valor), 195, y, { align: "right" }); y += 12;
   });
-  doc.setFontSize(14); doc.text("Total geral: " + fmt(geral), 15, y);
+  doc.setFontSize(14); doc.text("Total do cofrinho: " + fmt(geral), 15, y);
+  if (listaCofrinhos().length > 1) { y += 8; doc.setFontSize(11); doc.text("Total de todos os cofrinhos: " + fmt(totalTodos()), 15, y); }
   doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.text("Fênix Soluções Tecnológicas", 15, 288);
   doc.save("fenix-cofrinho-relatorio-" + new Date().toISOString().slice(0, 10) + ".pdf");
 }
@@ -2681,8 +2955,16 @@ document.addEventListener("click", ev => {
   if (alvo.dataset.delta) return mudarPend(alvo.dataset.rd, Number(alvo.dataset.delta));
   if (alvo.dataset.den && S.tela === "modelo") return abrirAjuste(denPorId(alvo.dataset.den));
   if (alvo.id === "btnRapido") return alternarRapido();
+  if (alvo.dataset.cx) return escolherCx(alvo.dataset.cx);
+  if (alvo.id === "btnNovoCx") return abrirNomeCx(true);
+  if (alvo.id === "btnRenCx") return abrirNomeCx(false);
+  if (alvo.id === "btnSeparar") return abrirSeparar();
+  if (alvo.dataset.editcat) return abrirCategoriaMov(alvo.dataset.editcat);
+  if (alvo.dataset.periodo) { S.periodo = alvo.dataset.periodo; S.limite = 60; return render(); }
+  if (alvo.id === "btnPdOk") { S.de = $("#pdDe").value.trim(); S.ate = $("#pdAte").value.trim(); return render(); }
+  if (alvo.id === "btnTodosCx") { S.todosCx = !S.todosCx; S.limite = 60; return render(); }
   if (alvo.id === "btnTrocar") return abrirTroca();
-  if (alvo.id === "btnAplicar") return aplicarPend();
+  if (alvo.id === "btnAplicar") return abrirAplicarRapida();
   if (alvo.id === "btnDescartar") return perguntarDescartar(() => { S.pend = {}; render(); });
   if (alvo.id === "btnMeta") return abrirMeta();
   if (alvo.id === "btnTrazer") return trazerLocal();
@@ -2692,7 +2974,7 @@ document.addEventListener("click", ev => {
   if (alvo.id === "btnPdf") return gerarPDF();
   if (alvo.id === "btnBackup") return fazerBackup();
   if (alvo.id === "btnRestaurar") return $("#arqRestaurar").click();
-  if (alvo.id === "btnZerar") return confirmarDigitando("Zerar todos os saldos?", "Todas as moedas e células serão levadas a zero de uma vez. O histórico continua guardado.", "APAGAR", zerarSaldos);
+  if (alvo.id === "btnZerar") return confirmarDigitando("Zerar os saldos deste cofrinho?", `Todas as moedas e células do cofrinho ${nomeCx(S.cx)} serão levadas a zero de uma vez. O histórico continua guardado.`, "APAGAR", zerarSaldos);
   if (alvo.id === "btnSair") return S.auth && S.auth.sair();
 });
 document.addEventListener("change", ev => {
@@ -2718,14 +3000,14 @@ if ("serviceWorker" in navigator && (location.protocol === "https:" || location.
   try { S.core.versoes.montarSelo($("#seloHdr"), VERSAO, { coreMinimo: CORE_MINIMO, livro: LIVRO }); } catch (e) { console.warn(e); }
   try { S.core.som.tocarAbertura({ somentePermitido: true }); } catch (e) {}   // regra 59: no splash, só se o navegador já permitir
   if (!FENIX_BANCO_ATIVO) {   // regra 1: banco desligado = só no aparelho, sem ler nem gravar no Firestore
-    migrarEsquema("local"); S.local = true; S.user = null; S.movs = lerArr(chaveLocal()); S.meta = metaDe(lerArr(CHAVE_CFG_LOCAL)); chip("local"); mostrarApp(); return;
+    migrarEsquema("local"); S.local = true; S.user = null; S.movs = lerArr(chaveLocal()); S.cfg = lerArr(CHAVE_CFG_LOCAL); garantirCx(); chip("local"); mostrarApp(); return;
   }
   const { app, db } = S.core.initFirebaseComCache();
   try { S.core.init(APP); } catch (e) { console.warn(e); }   // identifica o app no core (regra 1)
   S.db = db; S.auth = S.core.criarModuloAuth(app);
   S.auth.aoMudarEstado(async user => {
     if (!user) {
-      S.user = null; S.perfil = null; pararNuvem(); S.movs = []; S.meta = 0; S.rapido = false; S.pend = {};
+      S.user = null; S.perfil = null; pararNuvem(); S.movs = []; S.cfg = []; S.cx = "principal"; S.rapido = false; S.pend = {};
       document.body.classList.remove("somente-leitura"); $("#avisoLic").innerHTML = ""; mostrarLogin(); return;
     }
     S.user = user; S.local = false; iniciarNuvem();
