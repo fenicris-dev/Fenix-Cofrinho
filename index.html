@@ -262,6 +262,10 @@ body.somente-leitura [data-grava]{opacity:.4;pointer-events:none}
 .plano{display:flex;flex-direction:column;gap:8px;margin:10px 0}
 .plano-l{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:#fff;border:1px solid var(--linha);border-radius:12px;padding:8px 12px}
 .plano-l .mini{width:64px;display:flex;justify-content:center}
+.disp{margin:4px 0 8px}
+.disp summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:700;color:var(--fenix)}
+.disp-i{display:flex;gap:10px;align-items:center;min-height:44px}
+.disp-i input{width:22px;height:22px;flex:none}
 .plano-l .d{color:var(--suave);font-size:.82rem}
 .mov .acs{display:flex;flex-direction:column;align-items:flex-end}
 .erro-campo{color:var(--erro);font-size:.9rem;text-align:center;min-height:1.3em;margin:0}
@@ -821,7 +825,7 @@ setTimeout(fenixSplashFechar, 1200);
   <a href="https://wa.me/5579999680880" target="_blank" rel="noopener">&lt;Cristiano Fênix/&gt;</a>
   |
   <a href="https://www.instagram.com/fenixsolucoestecnologicas/" target="_blank" rel="noopener">© Fênix Soluções Tecnológicas</a>
-  · v1.9
+  · v2.0
 </footer>
 
 <script>
@@ -1208,7 +1212,7 @@ function socialLogin(provider) {
   <a href="https://wa.me/5579999680880" target="_blank" rel="noopener">&lt;Cristiano Fênix/&gt;</a>
   |
   <a href="https://www.instagram.com/fenixsolucoestecnologicas/" target="_blank" rel="noopener">© Fênix Soluções Tecnológicas</a>
-  · v1.9
+  · v2.0
 </footer>
 
 <script>
@@ -1824,7 +1828,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
  * backup, tela Sobre. Cópia local no localStorage (funciona offline).
  * ========================================================================== */
 const APP = "fenix-cofrinho";
-const VERSAO = "v1.9";
+const VERSAO = "v2.0";
 const INICIO_PROJETO = "04/11/2026";
 const LIVRO = "5.8";          // versão do Livro das Regras aplicada (selo da regra 53)
 const CORE_MINIMO = "4.4";    // core mais antigo que o app aceita (criarSincronia com importarLista)
@@ -1837,25 +1841,25 @@ const FENIX_BANCO_ATIVO = true;   // grupo A: sinal de ativar dado em 04/11/2026
 
 /* ---------- Dados fixos ---------- */
 const CELULAS = [
-  { c: 200,   nome: "Lobo-guará",         cor: ["#7d8794", "#c3cad3"] },
-  { c: 100,   nome: "Garoupa",            cor: ["#1f5fa8", "#7fb2e6"] },
-  { c: 50,    nome: "Onça-pintada",       cor: ["#9a5a1e", "#e0a35c"] },
-  { c: 20,    nome: "Mico-leão-dourado",  cor: ["#d9a400", "#ffe173"] },
-  { c: 10,    nome: "Arara-vermelha",     cor: ["#b3261e", "#ee8a82"] },
+  { c: 2,     nome: "Tartaruga-marinha",  cor: ["#2a7fb8", "#8ccbe9"] },
   { c: 5,     nome: "Garça-branca",       cor: ["#6b3fa0", "#b79ae0"] },
-  { c: 2,     nome: "Tartaruga-marinha",  cor: ["#2a7fb8", "#8ccbe9"] }
+  { c: 10,    nome: "Arara-vermelha",     cor: ["#b3261e", "#ee8a82"] },
+  { c: 20,    nome: "Mico-leão-dourado",  cor: ["#d9a400", "#ffe173"] },
+  { c: 50,    nome: "Onça-pintada",       cor: ["#9a5a1e", "#e0a35c"] },
+  { c: 100,   nome: "Garoupa",            cor: ["#1f5fa8", "#7fb2e6"] },
+  { c: 200,   nome: "Lobo-guará",         cor: ["#7d8794", "#c3cad3"] }
 ].map(d => ({ ...d, v: d.c * 100, modelo: "celula" }));
 
 const COR_PADRAO = v => v === 100 ? "bimetal" : v === 50 ? "prata" : "bronze";
 const MOEDAS = [
-  { v: 100, cor: "bimetal", nome: "Um real" },
-  { v: 50,  cor: "prata",   nome: "Cinquenta centavos" },
-  { v: 25,  cor: "bronze",  nome: "Vinte e cinco centavos" },
-  { v: 25,  cor: "prata",   nome: "Vinte e cinco centavos" },
+  { v: 5,   cor: "bronze",  nome: "Cinco centavos" },
+  { v: 5,   cor: "prata",   nome: "Cinco centavos" },
   { v: 10,  cor: "bronze",  nome: "Dez centavos" },
   { v: 10,  cor: "prata",   nome: "Dez centavos" },
-  { v: 5,   cor: "bronze",  nome: "Cinco centavos" },
-  { v: 5,   cor: "prata",   nome: "Cinco centavos" }
+  { v: 25,  cor: "bronze",  nome: "Vinte e cinco centavos" },
+  { v: 25,  cor: "prata",   nome: "Vinte e cinco centavos" },
+  { v: 50,  cor: "prata",   nome: "Cinquenta centavos" },
+  { v: 100, cor: "bimetal", nome: "Um real" }
 ].map(d => ({ ...d, tipo: d.cor, modelo: "moeda", id: "m" + d.v + d.cor[0] }));
 CELULAS.forEach(d => { d.id = "c" + d.c; });
 
@@ -1863,7 +1867,7 @@ const MODELOS = {
   celula: { rotulo: "Células", singular: "célula", itens: CELULAS },
   moeda:  { rotulo: "Moedas",  singular: "moeda",  itens: MOEDAS }
 };
-const DENS = [...CELULAS, ...MOEDAS];
+const DENS = [...MOEDAS, ...CELULAS];   // do menor para o maior valor
 const denPorId = id => DENS.find(d => d.id === id);
 const CORES = { bronze: "Bronze", prata: "Prateada", bimetal: "Bimetálica" };
 const corDe = m => m.modelo === "moeda" ? (m.cor || COR_PADRAO(m.v)) : "";
@@ -2085,8 +2089,7 @@ function render() {
 }
 
 function pilha(modelo) {
-  const it = MODELOS[modelo].itens;
-  const mostra = modelo === "celula" ? [it[3], it[1], it[0]] : [it[2], it[0], it[3]];
+  const mostra = (modelo === "celula" ? ["c20", "c100", "c200"] : ["m25b", "m100b", "m25p"]).map(denPorId);
   const pos = [{ r: -9, x: -58 }, { r: 0, x: 0 }, { r: 9, x: 58 }];
   return mostra.map((d, i) => `<span style="position:absolute;transform:translateX(${pos[i].x}px) rotate(${pos[i].r}deg);filter:drop-shadow(0 3px 5px rgba(2,7,51,.28))">${face(d, modelo === "celula" ? 96 : 100)}</span>`).join("");
 }
@@ -2266,6 +2269,8 @@ function htmlDados() {
 
 /* ---------- Sobre (Core) ---------- */
 const CHANGELOG = [
+  { versao: "2.0", criadaEm: "2026-11-16", modificadaEm: "2026-11-16",
+    mudancas: ["Células e moedas em ordem crescente (do menor para o maior valor) em todas as listas, no Separar valor, nas trocas e no PDF", "Separar valor: só usa peças que existem no saldo do cofrinho e mostra \"usa X de Y\" em cada peça", "Separar valor: lista \"Peças que podem entrar na conta\" para desmarcar o que não está fisicamente no caixa", "Separar valor: confere o saldo de novo na hora de retirar e avisa se ele mudou desde o cálculo"] },
   { versao: "1.9", criadaEm: "2026-11-15", modificadaEm: "2026-11-15",
     mudancas: ["Vários cofrinhos (Casa, Carteira, Caixa…), cada um com seus saldos, meta e histórico, e o total de todos", "Para onde foi o dinheiro (e de onde veio): categorias na retirada e no acréscimo, editáveis depois no Histórico", "Resumo por período no Histórico: entrou, saiu, variação e a divisão por categoria", "Separar valor: o app escolhe, do saldo, as peças certas para formar um valor, com o menor número de peças", "Esquema dos dados v3: cofrinho (cx) e categoria (cat) nas movimentações, com migração e cópia de segurança"] },
   { versao: "1.8", criadaEm: "2026-11-15", modificadaEm: "2026-11-15",
@@ -2504,15 +2509,18 @@ function abrirNomeCx(novo) {
   f.querySelector("#cxNome").focus();
 }
 /* ---------- Separar valor: o menor número de peças do saldo que forma o valor ---------- */
+const d_id = x => x.d.id;
 function centavosDe(txt) {
   const reais = S.core && S.core.mascaras ? S.core.mascaras.moedaParaNumero(txt) : parseReais(txt) / 100;
   return reais == null ? NaN : Math.round(reais * 100);
 }
-function planejarSeparacao(valor, cx) {
-  const dens = DENS.map(d => ({ d, q: saldoDen(d, cx) })).filter(x => x.q > 0), total = dens.reduce((t, x) => t + x.q * x.d.v, 0);
+function planejarSeparacao(valor, cx, fora) {
+  fora = fora || new Set();
+  const dens = DENS.map(d => ({ d, q: saldoDen(d, cx) })).filter(x => x.q > 0 && !fora.has(d_id(x))), total = dens.reduce((t, x) => t + x.q * x.d.v, 0);   // só entra o que existe no saldo (e não foi desmarcado)
+  if (!dens.length) return { erro: "Não há peças disponíveis neste cofrinho para fazer a conta." };
   if (!Number.isInteger(valor) || valor < 5) return { erro: "Informe um valor a partir de R$ 0,05." };
   if (valor % 5 !== 0) return { erro: "A menor peça é de R$ 0,05. Use um valor em múltiplos de R$ 0,05." };
-  if (valor > total) return { erro: `O saldo deste cofrinho (${fmt(total)}) não cobre ${fmt(valor)}. Faltam ${fmt(valor - total)}.` };
+  if (valor > total) return { erro: `As peças disponíveis (${fmt(total)}) não cobrem ${fmt(valor)}. Faltam ${fmt(valor - total)}.` };
   const A = valor / 5; if (A > 200000) return { erro: "Para valores acima de R$ 10.000,00, separe por partes." };
   const INF = 1e9, dp = [new Int32Array(A + 1).fill(INF)]; dp[0][0] = 0;
   dens.forEach(({ d, q }) => {   // mochila limitada com mínimo de peças, em O(A) por denominação (janela deslizante)
@@ -2538,15 +2546,19 @@ function planejarSeparacao(valor, cx) {
   for (let i = dens.length - 1; i >= 0; i--) {
     const v = dens[i].d.v / 5, c = Math.min(dens[i].q, Math.floor(A / v));
     for (let k = 0; k <= c && k * v <= a; k++) {
-      const x = dp[i][a - k * v]; if (x < INF && x + k === dp[i + 1][a]) { if (k) itens.push({ d: dens[i].d, k }); a -= k * v; break; }
+      const x = dp[i][a - k * v]; if (x < INF && x + k === dp[i + 1][a]) { if (k) itens.push({ d: dens[i].d, k, q: dens[i].q }); a -= k * v; break; }
     }
   }
-  itens.sort((x, y) => y.d.v - x.d.v);
+  itens.sort((x, y) => x.d.v - y.d.v);   // do menor para o maior
   return { itens, pecas: itens.reduce((t, x) => t + x.k, 0), total: valor };
 }
 function abrirSeparar() {
   const cx = S.cx; let plano = null, etapa = false, cat = null;
   const f = abrirFolha(`<div class="cab"><h3>Separar valor</h3><p>Informe quanto você precisa. O app escolhe, do saldo do cofrinho <b>${esc(nomeCx(cx))}</b>, as peças certas, usando o menor número de peças.</p></div>
+    <p class="dica num" style="margin:0 0 6px">Saldo deste cofrinho: <b>${fmt(totaisModelo("celula").valor + totaisModelo("moeda").valor)}</b></p>
+    <details class="disp"><summary>Peças que podem entrar na conta</summary>
+      <div class="disp-l">${DENS.filter(d => saldoDen(d, cx) > 0).map(d => `<label class="disp-i"><input type="checkbox" data-disp="${d.id}" checked><span>${d.modelo === "celula" ? "Célula " : "Moeda "}${fmt(d.v)}${d.modelo === "moeda" ? " · " + CORES[d.cor].toLowerCase() : ""} <span class="num dica">(${esc(fmtQtd(saldoDen(d, cx)))})</span></span></label>`).join("") || '<p class="dica">Este cofrinho não tem peças.</p>'}</div>
+      <p class="dica">Desmarque o que não está fisicamente no caixa. O cálculo só usa o que estiver marcado.</p></details>
     <label class="campo" for="spVal">Valor (R$)</label>
     <input class="entrada num" id="spVal" data-mask="moeda" placeholder="R$ 0,00" autocomplete="off">
     <p class="erro-campo" id="spErro" role="alert"></p>
@@ -2555,10 +2567,11 @@ function abrirSeparar() {
   const erro = f.querySelector("#spErro"), res = f.querySelector("#spRes");
   f.querySelector("#spNao").onclick = pedirFecharFolha;
   const calcular = () => {
-    erro.textContent = ""; res.hidden = true; etapa = false; cat = null;
-    plano = planejarSeparacao(centavosDe(f.querySelector("#spVal").value), cx);
+    erro.textContent = ""; res.hidden = true; res.innerHTML = ""; etapa = false; cat = null;
+    const fora = new Set([...f.querySelectorAll("[data-disp]")].filter(i => !i.checked).map(i => i.dataset.disp));
+    plano = planejarSeparacao(centavosDe(f.querySelector("#spVal").value), cx, fora);
     if (plano.erro) { erro.textContent = plano.erro; return; }
-    res.innerHTML = `<div class="plano">${plano.itens.map(it => `<div class="plano-l"><div class="mini">${face(it.d, 62)}</div><div><b class="num">${inteiro(it.k)} × ${fmt(it.d.v)}</b><div class="d">${it.d.modelo === "moeda" ? "moeda " + CORES[it.d.cor].toLowerCase() : "célula"} · ${esc(fmtQtd(it.k))}</div></div><b class="num">${fmt(it.k * it.d.v)}</b></div>`).join("")}</div>
+    res.innerHTML = `<div class="plano">${plano.itens.map(it => `<div class="plano-l"><div class="mini">${face(it.d, 62)}</div><div><b class="num">${inteiro(it.k)} × ${fmt(it.d.v)}</b><div class="d">${it.d.modelo === "moeda" ? "moeda " + CORES[it.d.cor].toLowerCase() : "célula"} · ${esc(fmtQtd(it.k))} · usa ${inteiro(it.k)} de ${inteiro(it.q)}</div></div><b class="num">${fmt(it.k * it.d.v)}</b></div>`).join("")}</div>
       <p class="num" style="text-align:center"><b>${inteiro(plano.pecas)}</b> ${plural(plano.pecas, "peça", "peças")} = <b>${fmt(plano.total)}</b></p>
       <div id="spCatBox" hidden><p class="campo" style="margin:8px 0 4px;text-align:center">Para onde foi? (opcional)</p><div class="chips" id="spChips" style="justify-content:center"></div></div>
       <button class="btn cheio" id="spTirar" data-grava type="button">Retirar essas peças do saldo</button>
@@ -2566,6 +2579,7 @@ function abrirSeparar() {
     res.hidden = false;
     f.querySelector("#spTirar").onclick = async ev => {
       if (!etapa) { etapa = true; f.querySelector("#spCatBox").hidden = false; ligarChips(f.querySelector("#spChips"), "saida", v => cat = v, null); ev.target.textContent = "Confirmar retirada"; return; }
+      if (!plano.itens.every(it => saldoDen(it.d, cx) >= it.k)) { erro.textContent = "O saldo mudou desde o cálculo (outro aparelho?). Calcule de novo."; res.hidden = true; plano = null; etapa = false; return; }   // nunca retira o que não existe
       ev.target.disabled = true;
       try { for (const it of plano.itens) await registrar(it.d, -it.k, "Valor Separado", cat ? { cat } : null); toast(`Separado: ${fmt(plano.total)} em ${inteiro(plano.pecas)} ${plural(plano.pecas, "peça", "peças")}.`); fecharFolha(); }
       catch (e) { console.error(e); ev.target.disabled = false; erro.textContent = msgGravar(e); }
